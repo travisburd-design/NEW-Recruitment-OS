@@ -166,8 +166,10 @@ var SHEET_MANIFEST = [
       'Suggested Interview Questions', 'Summary For Worksheet', 'AI Model Used',
       'Decision Status', 'Decision Reason', 'Status']
   },
-  // Assessment audit events now fold into the unified System Log (Type=ASSESSMENT);
-  // no dedicated Assessment Audit Log tab in the lean architecture.
+  {
+    name: SHEETS.ASSESSMENT_AUDIT_LOG,
+    headers: ['Timestamp', 'Actor', 'Candidate ID', 'Event', 'Previous Value', 'New Value', 'Reason', 'Details']
+  },
 
   // ── 4. Candidate data (existing structures preserved; missing cols appended)
   {
@@ -301,7 +303,7 @@ var SHEET_MANIFEST = [
       'Function', 'Message / Details', 'Stack', 'Notes'
     ],
     validations: [
-      { column: 'Type', list: ['EVENT', 'ERROR', 'OVERRIDE', 'ASSESSMENT', 'SKIP'] },
+      { column: 'Type', list: ['EVENT', 'ERROR', 'OVERRIDE', 'SKIP'] },
       { column: 'Severity', list: ['INFO', 'WARN', 'ERROR', 'CRITICAL'] }
     ]
   },
