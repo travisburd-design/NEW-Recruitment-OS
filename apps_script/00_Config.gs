@@ -60,8 +60,14 @@ var SHEETS = Object.freeze({
 
   // Operations
   EMAIL_QUEUE:            'Email Queue',
-  NOTIFICATION_LOG:       'Notification Log',
+  // Lean architecture: one chronological System Log (events + errors + overrides
+  // + skips, with a Type/Severity column) replaces the old Event/Error/Override
+  // Log tabs. Notification Log is renamed "Email Log". (See docs/LEAN_ARCHITECTURE.md)
+  SYSTEM_LOG:             'System Log',
+  NOTIFICATION_LOG:       'Email Log',
   EMAIL_SENT_LEDGER:      'Email Sent Ledger',
+  // Legacy log tab names — retained ONLY so the migration can find and merge old
+  // rows into System Log. No code writes to these any more.
   ERROR_LOG:              'Error Log',
   EVENT_LOG:              'Event Log',
   TRIGGER_HEALTH:         'Trigger Health',

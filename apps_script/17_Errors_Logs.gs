@@ -48,17 +48,22 @@ function logError_(label, errOrMessage, candidateId, severity) {
     // Always emit to Logger so it shows in Execution log even if sheet write fails
     Logger.log('[' + severity + '] ' + String(label) + ' — ' + msg);
 
-    var sh = getSheetOrNull_(SHEETS.ERROR_LOG);
+    // Lean architecture: one System Log for events + errors + overrides + skips.
+    var sh = getSheetOrNull_(SHEETS.SYSTEM_LOG) || getSheetOrNull_(SHEETS.ERROR_LOG);
     if (sh) {
       appendRowByHeader_(sh, {
-        'Timestamp':    shopDateTime_(),
-        'Severity':     severity,
-        'Label':        String(label || ''),
-        'Function':     _callerHint_(stack),
-        'Candidate ID': String(candidateId || ''),
-        'Message':      truncate_(msg, 1000),
-        'Stack':        truncate_(stack, 4000),
-        'Notes':        ''
+        'Timestamp':         shopDateTime_(),
+        'Type':              'ERROR',
+        'Severity':          severity,
+        'Label / Event':     String(label || ''),
+        'Candidate ID':      String(candidateId || ''),
+        'Function':          _callerHint_(stack),
+        'Message / Details': truncate_(msg, 1000),
+        // back-compat with the old Error Log schema if that's still the target
+        'Label':             String(label || ''),
+        'Message':           truncate_(msg, 1000),
+        'Stack':             truncate_(stack, 4000),
+        'Notes':             ''
       });
     }
 
@@ -91,15 +96,20 @@ function logEvent_(eventName, candidateId, details) {
     Logger.log('[EVENT] ' + String(eventName) + (candidateId ? ' (' + candidateId + ')' : '') +
                (detailsStr ? ' — ' + truncate_(detailsStr, 200) : ''));
 
-    var sh = getSheetOrNull_(SHEETS.EVENT_LOG);
+    var sh = getSheetOrNull_(SHEETS.SYSTEM_LOG) || getSheetOrNull_(SHEETS.EVENT_LOG);
     if (sh) {
       appendRowByHeader_(sh, {
-        'Timestamp':    shopDateTime_(),
-        'Event':        String(eventName || ''),
-        'Candidate ID': String(candidateId || ''),
-        'Function':     _callerHint_(),
-        'Details':      truncate_(detailsStr, 4000),
-        'Notes':        ''
+        'Timestamp':         shopDateTime_(),
+        'Type':              'EVENT',
+        'Severity':          'INFO',
+        'Label / Event':     String(eventName || ''),
+        'Candidate ID':      String(candidateId || ''),
+        'Function':          _callerHint_(),
+        'Message / Details': truncate_(detailsStr, 4000),
+        // back-compat with the old Event Log schema if that's still the target
+        'Event':             String(eventName || ''),
+        'Details':           truncate_(detailsStr, 4000),
+        'Notes':             ''
       });
     }
   } catch (e) {
@@ -171,8 +181,7 @@ function pruneLogs(maxRows) {
   if (typeof _triggerHeartbeat_ === 'function') _triggerHeartbeat_('pruneLogs', 'OK');
   maxRows = parseInt(maxRows, 10) || 5000;
   var sheets = [
-    SHEETS.ERROR_LOG, SHEETS.EVENT_LOG,
-    SHEETS.NOTIFICATION_LOG, SHEETS.AI_GRADING_LOGS,
+    SHEETS.SYSTEM_LOG, SHEETS.NOTIFICATION_LOG, SHEETS.AI_GRADING_LOGS,
     SHEETS.DAILY_DIGEST_LOG
   ];
   var summary = {};
@@ -197,25 +206,31 @@ function _pruneSheet_(sheetName, maxRows) {
   return { kept: maxRows, deleted: toDelete };
 }
 
-/** Quick view of the most recent N errors. Default 10. */
+/** Quick view of the most recent N errors/warnings from the System Log. Default 10. */
 function viewRecentErrors(n) {
   n = parseInt(n, 10) || 10;
-  var sh = getSheetOrNull_(SHEETS.ERROR_LOG);
-  if (!sh) return '[LOGS] Error Log sheet missing.';
+  var sh = getSheetOrNull_(SHEETS.SYSTEM_LOG) || getSheetOrNull_(SHEETS.ERROR_LOG);
+  if (!sh) return '[LOGS] System Log sheet missing.';
   var last = sh.getLastRow();
-  if (last < 2) return '[LOGS] no errors logged.';
-  var startRow = Math.max(2, last - n + 1);
-  var rows = sh.getRange(startRow, 1, last - startRow + 1, sh.getLastColumn()).getValues();
+  if (last < 2) return '[LOGS] no rows logged.';
   var headers = getHeaderRow_(sh);
-  var out = ['[LOGS] last ' + rows.length + ' error(s):'];
-  rows.forEach(function (r) {
-    var ts  = r[headers.indexOf('Timestamp')];
-    var sev = r[headers.indexOf('Severity')];
-    var lab = r[headers.indexOf('Label')];
-    var msg = r[headers.indexOf('Message')];
-    out.push('  · ' + ts + ' [' + sev + '] ' + lab + ' — ' + truncate_(String(msg), 140));
-  });
-  var s = out.join('\n');
+  function col() { for (var i = 0; i < arguments.length; i++) { var idx = headers.indexOf(arguments[i]); if (idx !== -1) return idx; } return -1; }
+  var cTs = col('Timestamp'), cSev = col('Severity'), cLab = col('Label / Event', 'Label', 'Event'),
+      cMsg = col('Message / Details', 'Message', 'Details'), cType = col('Type');
+  // Read the whole table (logs are pruned, so this stays bounded) and keep the
+  // most recent rows that are errors/warnings.
+  var rows = sh.getRange(2, 1, last - 1, headers.length).getValues();
+  var hits = [];
+  for (var i = rows.length - 1; i >= 0 && hits.length < n; i--) {
+    var sev = cSev !== -1 ? String(rows[i][cSev] || '').toUpperCase() : '';
+    var type = cType !== -1 ? String(rows[i][cType] || '').toUpperCase() : '';
+    var isErr = (type === 'ERROR') || sev === 'ERROR' || sev === 'CRITICAL' || sev === 'WARN';
+    if (cType === -1 && cSev === -1) isErr = true; // legacy Error Log: every row counts
+    if (!isErr) continue;
+    hits.push('  · ' + (cTs !== -1 ? rows[i][cTs] : '') + ' [' + sev + '] ' +
+              (cLab !== -1 ? rows[i][cLab] : '') + ' — ' + truncate_(String(cMsg !== -1 ? rows[i][cMsg] : ''), 140));
+  }
+  var s = ['[LOGS] last ' + hits.length + ' error/warning(s):'].concat(hits).join('\n');
   Logger.log(s);
   return s;
 }
@@ -250,27 +265,22 @@ function _callerHint_(stack) {
 // ─────────────────────────────────────────────────────────────────────────────
 function ERRORS_selfTest() {
   var out = ['[ERRORS] selfTest starting…'];
-  var es = getSheetOrNull_(SHEETS.ERROR_LOG);
-  var ev = getSheetOrNull_(SHEETS.EVENT_LOG);
-  out.push('  ─ Error Log sheet : ' + (es ? 'OK' : 'MISSING — run bootstrapSystem()'));
-  out.push('  ─ Event Log sheet : ' + (ev ? 'OK' : 'MISSING — run bootstrapSystem()'));
+  var sys = getSheetOrNull_(SHEETS.SYSTEM_LOG) || getSheetOrNull_(SHEETS.ERROR_LOG);
+  out.push('  ─ System Log sheet : ' + (sys ? 'OK' : 'MISSING — run bootstrapSystem()'));
 
-  var errBefore = es ? es.getLastRow() : 0;
-  var evtBefore = ev ? ev.getLastRow() : 0;
+  var before = sys ? sys.getLastRow() : 0;
 
-  // 1) String form
+  // 1) String form (WARN)
   logError_('ERRORS_selfTest', 'Test WARNING (ignore)', '', 'WARN');
-  // 2) Error object form
+  // 2) Error object form (ERROR)
   try { JSON.parse('{not valid'); } catch (e) {
     logError_('ERRORS_selfTest:parseDemo', e, 'FES-TEST-00000000', 'ERROR');
   }
-  // 3) Event with object details
+  // 3) Event with object details (EVENT)
   logEvent_('SELFTEST_EVENT', '', { source: 'ERRORS_selfTest', mode: isLiveMode_() ? 'LIVE' : 'TEST' });
 
-  var errAfter = es ? es.getLastRow() : 0;
-  var evtAfter = ev ? ev.getLastRow() : 0;
-  out.push('  ' + (errAfter - errBefore === 2 ? '✓' : '✗') + ' Error Log rows added: ' + (errAfter - errBefore) + ' (expected 2)');
-  out.push('  ' + (evtAfter - evtBefore === 1 ? '✓' : '✗') + ' Event Log rows added: ' + (evtAfter - evtBefore) + ' (expected 1)');
+  var after = sys ? sys.getLastRow() : 0;
+  out.push('  ' + (after - before === 3 ? '✓' : '✗') + ' System Log rows added: ' + (after - before) + ' (expected 3 — 2 error/warn + 1 event)');
 
   // 4) Quick view
   out.push('  ─ viewRecentErrors(3) output below:');
