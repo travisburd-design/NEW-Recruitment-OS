@@ -1,0 +1,128 @@
+Template Key,Subject,Body,Required Merge Fields,Notes
+application_confirmation,We received your application — {{ShopName}},"Hi {{CandidateFirstName}},
+
+Thanks for applying to the {{RoleName}} position at {{ShopName}}. We received your application and will be in touch shortly with next steps.
+
+— {{CompanySignatureName}}","CandidateFirstName,RoleName,ShopName,CompanySignatureName",
+prescreen_invite,Next step: short pre-screen for {{RoleName}} at {{ShopName}},"Hi {{CandidateFirstName}},
+
+Please complete this short pre-screen so we can move your application forward:
+{{PrescreenFormLink}}
+
+— {{CompanySignatureName}}","CandidateFirstName,RoleName,ShopName,PrescreenFormLink,CompanySignatureName",
+phone_screen_booking,Book your phone screen with {{HiringManagerName}},"Hi {{CandidateFirstName}},
+
+We would like to schedule a phone screen for the {{RoleName}} role. Please pick a time here:
+{{BookingLink}}
+
+Looking forward to talking.
+
+{{HiringManagerName}}
+{{ShopName}}","CandidateFirstName,RoleName,BookingLink,HiringManagerName,ShopName",
+phone_screen_confirmation,Phone screen confirmed for {{InterviewDate}},"Hi {{CandidateFirstName}},
+
+Your phone screen is confirmed for {{InterviewDate}}.
+Meeting link: {{MeetLink}}
+
+Talk soon,
+{{HiringManagerName}}","CandidateFirstName,InterviewDate,MeetLink,HiringManagerName",
+full_interview_booking,Book your full interview — {{ShopName}},"Hi {{CandidateFirstName}},
+
+Great conversation. The next step is a full interview at {{InterviewLocation}}. Please choose a time:
+{{FullInterviewLink}}
+
+— {{CompanySignatureName}}","CandidateFirstName,FullInterviewLink,InterviewLocation,CompanySignatureName",
+reference_request_candidate,Quick favor — references for {{RoleName}},"Hi {{CandidateFirstName}},
+
+We are moving forward with your application for {{RoleName}}. Please share up to 3 references using this form:
+{{CandRefFormLink}}
+
+Thanks,
+{{HiringManagerName}}","CandidateFirstName,RoleName,CandRefFormLink,HiringManagerName",
+reference_check_reference,Reference request from {{ShopName}} regarding {{CandidateName}},"Hi {{ReferenceName}},
+
+{{CandidateName}} is being considered for our {{RoleName}} position and listed you as a reference. Please complete this short form:
+{{RefCheckFormLink}}
+
+Thank you,
+{{CompanySignatureName}}","ReferenceName,CandidateName,RoleName,RefCheckFormLink,CompanySignatureName,ShopName",
+culture_fit_invite,Culture fit assessment for {{RoleName}},"Hi {{CandidateFirstName}},
+
+Please complete this short assessment so we can finalize your fit for {{RoleName}}:
+{{CultureFormLink}}
+
+— {{CompanySignatureName}}","CandidateFirstName,RoleName,CultureFormLink,CompanySignatureName",Fallback only — by default combined with references via reference_and_culture_invite.
+reference_and_culture_invite,Two quick steps for your {{RoleName}} application — due {{ResponseDeadline}},"Hi {{CandidateFirstName}},
+
+Your live interview went well and you are now in the final stage. Please complete BOTH of the following by {{ResponseDeadline}} (within the next 48–72 hours):
+
+1) References — share up to 3:
+   {{CandRefFormLink}}
+
+2) Culture Fit assessment:
+   {{CultureFormLink}}
+
+Completing both keeps your application moving without delay.
+
+Thanks,
+{{HiringManagerName}}
+{{ShopName}}","CandidateFirstName,RoleName,CandRefFormLink,CultureFormLink,ResponseDeadline,HiringManagerName,ShopName",Combined references + culture-fit ask sent on Manager Decision = Request References.
+working_interview_invitation,Working interview invitation — {{ShopName}},"Hi {{CandidateFirstName}},
+
+We would like to invite you to a paid working interview at {{InterviewLocation}}. Reply with a couple of days and times that work for you over the next week and we will lock it in.
+
+— {{CompanySignatureName}}","CandidateFirstName,InterviewLocation,CompanySignatureName",
+hold_email,Update on your application — {{ShopName}},"Hi {{CandidateFirstName}},
+
+We appreciate your interest in {{ShopName}}. We are still reviewing applicants and will follow up within {{SLADays}} business days.
+
+— {{CompanySignatureName}}","CandidateFirstName,ShopName,SLADays,CompanySignatureName",
+gracious_decline,Update on your {{RoleName}} application,"Hi {{CandidateFirstName}},
+
+Thank you for applying for the {{RoleName}} role at {{ShopName}}. After review, we will not be moving forward at this time. We wish you the best.
+
+— {{CompanySignatureName}}","CandidateFirstName,RoleName,ShopName,CompanySignatureName",
+we_are_reviewing,We received your application — review in progress,"Hi {{CandidateFirstName}},
+
+We are reviewing your application. You will hear from us within {{SLADays}} business days. In the meantime, learn more at {{ShopWebsite}}.
+
+— {{CompanySignatureName}}","CandidateFirstName,SLADays,ShopWebsite,CompanySignatureName",
+offer_pending_followup,Next steps for your offer — {{RoleName}},"Hi {{CandidateFirstName}},
+
+We are finalizing the offer for {{RoleName}}. {{HiringManagerName}} will reach out shortly with the details.
+
+— {{CompanySignatureName}}","CandidateFirstName,RoleName,HiringManagerName,CompanySignatureName",
+hired_congratulations,Welcome to {{ShopName}}!,"Hi {{CandidateFirstName}},
+
+Congratulations — we are excited to welcome you as our new {{RoleName}}. {{HiringManagerName}} will follow up with start details for {{InterviewLocation}}.
+
+— {{CompanySignatureName}}","CandidateFirstName,RoleName,InterviewLocation,HiringManagerName,CompanySignatureName,ShopName",
+technician_post_prescreen,Two quick next steps for your Technician application — {{ShopName}},"Hi {{CandidateFirstName}},
+
+Thanks for completing the pre-screen for the {{RoleName}} position at {{ShopName}}. To move forward, please complete both of the following BEFORE your phone screen:
+
+1) Book your phone screen with {{HiringManagerName}}:
+   {{BookingLink}}
+
+2) Complete the Technician Skill Level Test (takes ~20 minutes):
+   {{SkillsTestLink}}
+
+The skill test helps us understand your hands-on experience so we can use the phone screen to talk about the work, not the basics. Please complete the test on your own without outside assistance — we look for honest, real-world answers.
+
+Looking forward to talking.
+
+{{HiringManagerName}}
+{{ShopName}}","CandidateFirstName,RoleName,ShopName,HiringManagerName,BookingLink,SkillsTestLink",
+interview_worksheet_dayof,Interview today — {{CandidateName}} ({{RoleName}}) at {{InterviewDate}},{{WorksheetBody}},"CandidateName,RoleName,InterviewDate,WorksheetBody",Day-of interview cheat sheet emailed to hiring manager.
+not_currently_hiring,Your {{RoleName}} application — {{ShopName}},"Hi {{CandidateFirstName}},
+
+Thank you for taking the time to complete our pre-screen for the {{RoleName}} role at {{ShopName}} — we genuinely appreciate the effort.
+
+We want to be straightforward with you: at this time, we are not actively moving forward with new hires for this position. This is not a reflection of your application — it is simply where we are right now as a business.
+
+We will keep your information on file. If things change and a position opens up that looks like a strong fit, we will reach back out. You are also always welcome to check back at {{ShopWebsite}}.
+
+Thank you again for your interest in {{ShopName}}. We wish you the very best in your search.
+
+— {{CompanySignatureName}}
+{{CompanyAddress}} · {{CompanyPhone}}","CandidateFirstName,RoleName,ShopName,ShopWebsite,CompanySignatureName,CompanyAddress,CompanyPhone",Sent when HIRING_PAUSE_MODE is TRUE

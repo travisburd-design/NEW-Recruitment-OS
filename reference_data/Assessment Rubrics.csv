@@ -1,0 +1,48 @@
+Active,Rubric Key,Category,Weight,Criteria,Pass Threshold,Notes
+TRUE,RUBRIC_SERVICE_ADVISOR,Culture Fit,30,"Grades ownership, honesty, coachability, attitude, dependability, teamwork, and alignment with Frank’s customer experience standards.",80,"High score requires calm ownership, positive tone, willingness to learn, and customer-first thinking without blame or excuses."
+TRUE,RUBRIC_SERVICE_ADVISOR,Role Skill Fit,35,"Grades estimate communication, diagnostic explanation, timeline setting, objection handling, phone readiness, and advisor workflow judgment.",75,"High score requires clear explanation, structured process, urgency without pressure, and ability to protect trust."
+TRUE,RUBRIC_SERVICE_ADVISOR,Communication Quality,15,"Grades clarity, professionalism, tone, grammar, and ability to explain complex issues simply.",75,"Flag vague, defensive, overly casual, or confusing answers."
+TRUE,RUBRIC_SERVICE_ADVISOR,Experience Alignment,10,"Grades prior advisor, sales, customer service, automotive, CRM, DVI, or phone-heavy experience.",70,Experience can be direct or transferable if communication and ownership are strong.
+TRUE,RUBRIC_SERVICE_ADVISOR,Risk Review,10,"Grades red flags such as blame, pressure-selling, weak accountability, poor phone comfort, or resistance to process.",75,"Lower score if candidate avoids responsibility, dislikes phones, or focuses only on closing."
+,,,,,,
+TRUE,RUBRIC_TECHNICIAN,Culture Fit,30,"Grades ownership, honesty, coachability, teamwork, documentation attitude, and willingness to follow shop process.",75,"High score requires testing-first mindset, accountability, and no ego around learning."
+TRUE,RUBRIC_TECHNICIAN,Role Skill Fit,35,"Grades diagnostic process, European experience, scan tool use, service information use, comeback prevention, and technical judgment.",78,High score requires structured testing before parts replacement and strong documentation habits.
+TRUE,RUBRIC_TECHNICIAN,Communication Quality,15,Grades ability to explain findings clearly in writing for advisors and customers.,75,"Flag short, vague, incomplete, or overly technical answers that do not support customer understanding."
+TRUE,RUBRIC_TECHNICIAN,Experience Alignment,10,"Grades brand experience, diagnostic background, tool readiness, and prior shop experience.",70,Experience should match role level; lack of European experience may require manual review.
+TRUE,RUBRIC_TECHNICIAN,Risk Review,10,"Grades red flags such as guessing, parts-changing, poor documentation, blame, or lack of comeback ownership.",75,Low score if candidate replaces parts without testing or avoids responsibility for rechecks.
+,,,,,,
+TRUE,RUBRIC_LUBE_TECH,Culture Fit,30,"Grades coachability, honesty, dependability, attitude, teamwork, and willingness to learn.",75,"High score requires humility, punctuality, safety mindset, and openness to correction."
+TRUE,RUBRIC_LUBE_TECH,Role Skill Fit,35,"Grades basic maintenance understanding, inspection habits, tool comfort, cleanliness, safety, and attention to detail.",65,High score requires process discipline and careful work even with limited experience.
+TRUE,RUBRIC_LUBE_TECH,Communication Quality,15,"Grades ability to explain mistakes, ask questions, and communicate uncertainty clearly.",70,Flag answers that hide mistakes or avoid asking for help.
+TRUE,RUBRIC_LUBE_TECH,Experience Alignment,10,"Grades prior maintenance, technical school, basic shop experience, or strong hands-on aptitude.",60,Entry-level candidates can pass with strong attitude and coachability.
+TRUE,RUBRIC_LUBE_TECH,Risk Review,10,"Grades red flags such as carelessness, resistance to correction, unsafe mindset, or lack of dependability.",75,Low score if candidate minimizes safety or accountability.
+,,,,,,
+TRUE,RUBRIC_VALET_PORTER,Culture Fit,30,"Grades dependability, professionalism, honesty, attitude, customer respect, and team support.",80,"High score requires calm, respectful, reliable, and process-minded behavior."
+TRUE,RUBRIC_VALET_PORTER,Role Skill Fit,35,"Grades vehicle handling, safety awareness, customer interaction, damage reporting, organization, and ability to follow direction.",65,High score requires careful movement of vehicles and immediate reporting of issues.
+TRUE,RUBRIC_VALET_PORTER,Communication Quality,15,"Grades clarity, tone, professionalism, and ability to communicate delays or issues appropriately.",70,"Flag casual, dismissive, or unclear answers."
+TRUE,RUBRIC_VALET_PORTER,Experience Alignment,10,"Grades driving experience, customer-facing experience, porter/valet experience, and comfort with high-value vehicles.",60,Candidate can pass with strong maturity and clean process mindset.
+TRUE,RUBRIC_VALET_PORTER,Risk Review,10,"Grades red flags such as unsafe driving attitude, poor attention to detail, blame, or weak punctuality.",75,Low score if candidate does not recognize vehicle care or customer property responsibility.
+,,,,,,
+TRUE,RUBRIC_PARTS,Culture Fit,30,"Grades ownership, accuracy, urgency, teamwork, coachability, and communication with technicians/advisors.",75,"High score requires calm urgency, accountability, and respect for workflow."
+TRUE,RUBRIC_PARTS,Role Skill Fit,35,"Grades part lookup accuracy, VIN awareness, vendor communication, ETA tracking, invoice documentation, returns, and fitment discipline.",72,High score requires verify-first mindset and strong documentation habits.
+TRUE,RUBRIC_PARTS,Communication Quality,15,"Grades ability to communicate clearly with vendors, technicians, advisors, and leadership.",72,Flag vague vendor communication or lack of follow-up.
+TRUE,RUBRIC_PARTS,Experience Alignment,10,"Grades automotive parts, inventory, vendor, repair order, or dealership/independent shop experience.",65,Transferable experience may pass if accuracy and process discipline are strong.
+TRUE,RUBRIC_PARTS,Risk Review,10,"Grades red flags such as guessing on fitment, poor tracking, weak urgency, or blaming vendors without solving.",75,Low score if candidate prioritizes speed over accuracy.
+,,,,,,
+TRUE,RUBRIC_CX,Culture Fit,30,"Grades empathy, ownership, positivity, honesty, dependability, and alignment with Frank’s customer experience standards.",82,"High score requires genuine care, calm tone, and follow-through."
+TRUE,RUBRIC_CX,Role Skill Fit,35,"Grades customer follow-up, service recovery, documentation, phone comfort, feedback handling, and escalation judgment.",68,High score requires clear follow-up structure and ability to protect customer trust.
+TRUE,RUBRIC_CX,Communication Quality,15,"Grades warmth, clarity, professionalism, grammar, and ability to communicate with upset customers.",75,"Flag defensive, dismissive, or overly scripted answers."
+TRUE,RUBRIC_CX,Experience Alignment,10,"Grades customer service, hospitality, call handling, admin support, or relationship-building experience.",65,Direct automotive experience is helpful but not required if CX mindset is strong.
+TRUE,RUBRIC_CX,Risk Review,10,"Grades red flags such as poor emotional control, lack of empathy, failure to document, or avoiding difficult conversations.",75,Low score if candidate does not take ownership of customer concerns.
+,,,,,,
+TRUE,RUBRIC_ADMIN,Culture Fit,30,"Grades honesty, confidentiality, dependability, coachability, follow-through, and calm support of operations.",78,"High score requires trustworthiness, organization, and ownership."
+TRUE,RUBRIC_ADMIN,Role Skill Fit,35,"Grades organization, accuracy, Google Workspace readiness, repetitive task discipline, reporting, and administrative judgment.",70,High score requires strong attention to detail and ability to manage multiple requests.
+TRUE,RUBRIC_ADMIN,Communication Quality,15,"Grades written clarity, escalation, asking questions, and ability to confirm instructions.",72,"Flag unclear, careless, or passive communication."
+TRUE,RUBRIC_ADMIN,Experience Alignment,10,"Grades admin, reporting, spreadsheet, HR, customer service, scheduling, or operations support experience.",65,Transferable experience may pass if accuracy and confidentiality are strong.
+TRUE,RUBRIC_ADMIN,Risk Review,10,"Grades red flags such as carelessness, confidentiality concerns, poor follow-through, or inability to handle correction.",75,Low score if candidate minimizes errors or mishandles sensitive information.
+,,,,,,
+TRUE,RUBRIC_SHOP_FOREMAN,Culture Fit,30,"Grades leadership maturity, ownership, honesty, accountability, coachability, team standards, and calm under pressure.",85,High score requires firm but fair leadership and alignment with shop standards.
+TRUE,RUBRIC_SHOP_FOREMAN,Role Skill Fit,35,"Grades diagnostic judgment, technician coaching, workflow control, QC standards, documentation enforcement, and comeback prevention.",82,High score requires advanced technical thinking and ability to lead through standards.
+TRUE,RUBRIC_SHOP_FOREMAN,Communication Quality,15,"Grades ability to explain expectations, coach technicians, support advisors, and resolve conflict professionally.",80,"Flag ego, blame, poor clarity, or avoidance of hard conversations."
+TRUE,RUBRIC_SHOP_FOREMAN,Experience Alignment,10,"Grades foreman, lead tech, diagnostic, European vehicle, quality control, and workflow leadership experience.",75,Strong technical and leadership experience should both be present.
+TRUE,RUBRIC_SHOP_FOREMAN,Risk Review,10,"Grades red flags such as doing everything personally, avoiding accountability, weak documentation standards, or poor conflict handling.",80,Low score if candidate lacks leadership maturity or does not enforce process.

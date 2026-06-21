@@ -1,0 +1,40 @@
+Prompt Key,Phase,Provider,Model,Temperature,Prompt Body,Notes
+prescreen,PreScreen,{{Provider}},{{Model}},0.2,"You evaluate a job pre-screen submission for an auto repair shop. Apply the rubric weights listed in AI Grading Rubrics. Penalize blame language and over-polished AI-style answers. Reward specificity, ownership, and realism.
+
+CANDIDATE PAYLOAD:
+{{Payload}}
+
+ROLE: {{RoleName}}
+ROLE REQUIREMENTS: {{RoleRequirements}}
+
+Return STRICT JSON only. No prose outside JSON. Fields: ai_score (0-100), ai_risk_score (0-10), summary, strengths (array of 3), concerns (array of 3), credibility_score (0-10), possible_misrepresentation (boolean), recommended_next_step (string from the candidate status list), confidence_level (High|Medium|Low).",Pre-screen written review prompt.
+phone_screen,PhoneScreen,{{Provider}},{{Model}},0.2,"You are evaluating a phone screen transcript. Apply rubric weights from AI Grading Rubrics (PhoneScreen). Look for red flags, schedule/pay alignment, and overall recommendation.
+
+ROLE: {{RoleName}}
+INTERVIEW DATE: {{InterviewDate}}
+
+TRANSCRIPT:
+{{TranscriptText}}
+
+Return STRICT JSON only. No prose outside JSON. Fields: ai_score (0-100), ai_risk_score (0-10), summary, strengths (array of 3), concerns (array of 3), credibility_score (0-10), possible_misrepresentation (boolean), recommended_next_step (string from the candidate status list), confidence_level (High|Medium|Low).",Phone screen grading prompt.
+full_interview,FullInterview,{{Provider}},{{Model}},0.2,"You are evaluating a full interview transcript. Apply rubric weights from AI Grading Rubrics (FullInterview). Provide holistic hiring confidence.
+
+ROLE: {{RoleName}}
+INTERVIEW DATE: {{InterviewDate}}
+
+TRANSCRIPT:
+{{TranscriptText}}
+
+Return STRICT JSON only. No prose outside JSON. Fields: ai_score (0-100), ai_risk_score (0-10), summary, strengths (array of 3), concerns (array of 3), credibility_score (0-10), possible_misrepresentation (boolean), recommended_next_step (string from the candidate status list), confidence_level (High|Medium|Low).",Full interview grading prompt.
+reference_summary,References,{{Provider}},{{Model}},0.2,"You are summarizing reference check responses for a candidate. Compute an average reference score (0-100), and list strengths, concerns, and a confidence level.
+
+REFERENCE RESPONSES:
+{{ReferencesPayload}}
+
+Return STRICT JSON: { reference_average_score, summary, strengths (3), concerns (3), confidence_level }.",Reference summarization prompt.
+culture_fit,CultureFit,{{Provider}},{{Model}},0.2,"You are scoring an internal culture fit assessment. Evaluate ownership, coachability, customer service, communication, work ethic, team alignment, problem solving, integrity. Penalize blame and bias toward concrete behavioral signals.
+
+RESPONSES:
+{{CulturePayload}}
+
+Return STRICT JSON: { ai_score (0-100), summary, strengths (3), concerns (3), confidence_level }.",Culture fit grading prompt.
