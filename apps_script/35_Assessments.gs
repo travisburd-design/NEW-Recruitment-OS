@@ -152,14 +152,36 @@ function getLatestAssessmentResult_(candidateId) {
 function logAssessmentEvent_(args) {
   try {
     args = args || {};
+    var event = String(args.event || '');
+    var prev = args.previousValue == null ? '' : String(args.previousValue);
+    var next = args.newValue == null ? '' : String(args.newValue);
+    // Lean architecture: assessment audit events fold into the unified System Log
+    // (Type=ASSESSMENT). This audit was write-only (nothing reads it), so the
+    // dedicated tab is removed. Falls back to the old tab only pre-migration.
+    var sys = getSheetOrNull_(SHEETS.SYSTEM_LOG);
+    if (sys) {
+      var detail = [(prev || next) ? (prev + ' → ' + next) : '', String(args.details || '')]
+                     .filter(function (s) { return s; }).join(' | ');
+      appendRowByHeader_(sys, {
+        'Timestamp':         shopDateTime_(),
+        'Type':              'ASSESSMENT',
+        'Severity':          /error|fail|invalid/i.test(event) ? 'WARN' : 'INFO',
+        'Label / Event':     event,
+        'Candidate ID':      args.candidateId || '',
+        'Function':          args.actor || 'system',
+        'Message / Details': detail,
+        'Notes':             args.reason || ''
+      });
+      return;
+    }
     var sh = getOrCreateSheet_(ASSESS_SHEETS.AUDIT_LOG, ASSESS_HEADERS.AUDIT_LOG);
     appendRowByHeader_(sh, {
       'Timestamp':      shopDateTime_(),
       'Actor':          args.actor || 'system',
       'Candidate ID':   args.candidateId || '',
-      'Event':          args.event || '',
-      'Previous Value': args.previousValue == null ? '' : String(args.previousValue),
-      'New Value':      args.newValue == null ? '' : String(args.newValue),
+      'Event':          event,
+      'Previous Value': prev,
+      'New Value':      next,
       'Reason':         args.reason || '',
       'Details':        args.details || ''
     });
