@@ -295,18 +295,17 @@ var SHEET_MANIFEST = [
     ]
   },
   {
-    name: SHEETS.ERROR_LOG,
+    // Lean architecture: ONE System Log replaces Error Log + Event Log +
+    // Override Log. Type distinguishes EVENT / ERROR / OVERRIDE / SKIP.
+    name: SHEETS.SYSTEM_LOG,
     headers: [
-      'Timestamp', 'Severity', 'Label', 'Function', 'Candidate ID',
-      'Message', 'Stack', 'Notes'
+      'Timestamp', 'Type', 'Severity', 'Label / Event', 'Candidate ID',
+      'Function', 'Message / Details', 'Stack', 'Notes'
     ],
     validations: [
+      { column: 'Type', list: ['EVENT', 'ERROR', 'OVERRIDE', 'SKIP'] },
       { column: 'Severity', list: ['INFO', 'WARN', 'ERROR', 'CRITICAL'] }
     ]
-  },
-  {
-    name: SHEETS.EVENT_LOG,
-    headers: ['Timestamp', 'Event', 'Candidate ID', 'Function', 'Details', 'Notes']
   },
   {
     name: SHEETS.TRIGGER_HEALTH,
@@ -356,12 +355,8 @@ var SHEET_MANIFEST = [
       'Pre-Screen Invite Status', 'Email Sent At', 'Error', 'Notes'
     ]
   },
-  // Audited manual status override (31_Override.gs)
-  {
-    name: SHEETS.OVERRIDE_LOG,
-    headers: ['Timestamp', 'Actor', 'Candidate ID', 'Override Type',
-      'Previous Value', 'New Value', 'Reason']
-  },
+  // Audited manual status override → now written to the unified System Log
+  // (Type=OVERRIDE), so no separate Override Log tab in the lean architecture.
   // Deterministic risk/DQ backstop audit (33_Deterministic_Risk.gs)
   {
     name: SHEETS.RISK_FLAGS,
