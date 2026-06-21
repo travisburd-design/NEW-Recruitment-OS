@@ -97,6 +97,14 @@ function _leanMigrate_(dryRun) {
              msg: String(o['Previous Value'] || '') + ' → ' + String(o['New Value'] || ''),
              stack: '', notes: o['Reason'] };
   });
+  _leanMergeLog_('Assessment Audit Log', 'ASSESSMENT', dryRun, L, function (o) {
+    var prev = String(o['Previous Value'] || ''), next = String(o['New Value'] || '');
+    var detail = [(prev || next) ? (prev + ' → ' + next) : '', String(o['Details'] || '')]
+                   .filter(function (s) { return s; }).join(' | ');
+    return { sev: /error|fail|invalid/i.test(String(o['Event'] || '')) ? 'WARN' : 'INFO',
+             label: o['Event'], fn: o['Actor'] || 'system', cid: o['Candidate ID'],
+             msg: detail, stack: '', notes: o['Reason'] };
+  });
 
   // 4) Color-zone every tab.
   L('-- color-zone tabs --');
