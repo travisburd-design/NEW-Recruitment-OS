@@ -1,0 +1,81 @@
+Active,Section Key,Order,Question,Question Type,Required,Choices,Scoring Weight,Notes
+TRUE,ASSESS_SERVICE_ADVISOR,1,Why are you interested in the Service Advisor role at Frank’s European Service?,Paragraph,TRUE,,5,"Evaluates motivation, alignment, communication style, and whether the candidate understands the role."
+TRUE,ASSESS_SERVICE_ADVISOR,2,How would you explain diagnostic time to a customer who wants an answer immediately?,Paragraph,TRUE,,15,"Tests ability to set expectations, explain process, and protect technician workflow."
+TRUE,ASSESS_SERVICE_ADVISOR,3,"A customer says, “That is way more than I expected.” How would you respond?",Paragraph,TRUE,,15,"Tests estimate presentation, empathy, trust-building, and objection handling."
+TRUE,ASSESS_SERVICE_ADVISOR,4,A technician finds additional safety concerns after the customer already approved work. What do you do next?,Paragraph,TRUE,,15,"Tests process discipline, customer communication, and ability to avoid assumptions."
+TRUE,ASSESS_SERVICE_ADVISOR,5,How comfortable are you with making a high volume of phone calls each day?,Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests phone readiness and daily activity comfort.
+TRUE,ASSESS_SERVICE_ADVISOR,6,What does great customer communication mean to you?,Paragraph,TRUE,,10,Tests customer experience mindset and communication standards.
+TRUE,ASSESS_SERVICE_ADVISOR,7,Tell us about a time you had to calm down an upset customer. What did you do?,Paragraph,TRUE,,15,"Tests emotional control, ownership, and conflict management."
+TRUE,ASSESS_SERVICE_ADVISOR,8,Which statement best describes your sales style?,Multiple choice,TRUE,I educate and guide customers clearly | I focus on closing as quickly as possible | I wait for the customer to decide without much guidance | I avoid discussing money when possible,10,"Preferred answer should show education, clarity, and guidance without pressure."
+TRUE,ASSESS_SERVICE_ADVISOR,9,What information should be reviewed before calling a customer with an estimate?,Paragraph,TRUE,,10,"Tests preparation, accuracy, and ability to communicate confidently."
+TRUE,ASSESS_SERVICE_ADVISOR,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_TECHNICIAN,1,Why are you interested in working as a Technician at Frank’s European Service?,Paragraph,TRUE,,5,"Evaluates motivation, professionalism, and alignment with European specialty work."
+TRUE,ASSESS_TECHNICIAN,2,Describe your diagnostic process for an intermittent no-start concern.,Paragraph,TRUE,,15,"Tests diagnostic structure, testing discipline, and ability to avoid guessing."
+TRUE,ASSESS_TECHNICIAN,3,What information should be documented before recommending a repair?,Paragraph,TRUE,,15,Tests diagnostic documentation quality and customer-facing explanation readiness.
+TRUE,ASSESS_TECHNICIAN,4,What diagnostic steps would you take before replacing a control module?,Paragraph,TRUE,,15,Tests testing-before-replacing mindset.
+TRUE,ASSESS_TECHNICIAN,5,Which European brands do you have the most experience with?,Checkboxes,TRUE,BMW | Mercedes-Benz | Audi | Volkswagen | Porsche | Land Rover / Jaguar | Volvo | MINI | Maserati | Bentley | Other,10,Identifies role fit and experience alignment.
+TRUE,ASSESS_TECHNICIAN,6,"How comfortable are you using scan tools, wiring diagrams, service information, and test plans?",Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests technical readiness.
+TRUE,ASSESS_TECHNICIAN,7,A vehicle returns with the same concern after repair. What do you do first?,Paragraph,TRUE,,15,"Tests comeback prevention, ownership, and process discipline."
+TRUE,ASSESS_TECHNICIAN,8,How do you handle a situation where you are not sure what the next diagnostic step should be?,Paragraph,TRUE,,10,"Tests coachability, communication, and escalation judgment."
+TRUE,ASSESS_TECHNICIAN,9,What does a complete diagnostic story look like to you?,Paragraph,TRUE,,15,Tests ability to write usable notes for advisors and customers.
+TRUE,ASSESS_TECHNICIAN,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_LUBE_TECH,1,Why are you interested in the Lube Tech role at Frank’s European Service?,Paragraph,TRUE,,5,"Evaluates motivation, attitude, and growth mindset."
+TRUE,ASSESS_LUBE_TECH,2,"What steps should be followed before, during, and after an oil service?",Paragraph,TRUE,,15,Tests basic process discipline and attention to detail.
+TRUE,ASSESS_LUBE_TECH,3,How would you inspect a vehicle and document visible concerns without exaggerating or guessing?,Paragraph,TRUE,,15,"Tests honesty, inspection accuracy, and documentation judgment."
+TRUE,ASSESS_LUBE_TECH,4,What would you do if you made a mistake during a service?,Paragraph,TRUE,,15,Tests ownership and integrity.
+TRUE,ASSESS_LUBE_TECH,5,How comfortable are you working with basic tools and shop equipment?,Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests readiness for entry-level shop work.
+TRUE,ASSESS_LUBE_TECH,6,What does safety mean when working around customer vehicles?,Paragraph,TRUE,,15,Tests safety mindset and vehicle care.
+TRUE,ASSESS_LUBE_TECH,7,"How do you respond when a technician, foreman, or manager gives you correction?",Paragraph,TRUE,,15,Tests coachability.
+TRUE,ASSESS_LUBE_TECH,8,Which best describes your long-term goal?,Multiple choice,TRUE,Grow into a higher-level technician | Stay in basic maintenance only | I am not sure yet but want to learn | I am just looking for any job,5,Tests growth alignment.
+TRUE,ASSESS_LUBE_TECH,9,What makes someone dependable in a shop environment?,Paragraph,TRUE,,10,Tests reliability and work ethic.
+TRUE,ASSESS_LUBE_TECH,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_VALET_PORTER,1,Why are you interested in the Valet / Porter role at Frank’s European Service?,Paragraph,TRUE,,5,"Evaluates motivation, professionalism, and role understanding."
+TRUE,ASSESS_VALET_PORTER,2,What steps should you take before moving a customer vehicle?,Paragraph,TRUE,,15,"Tests safety, inspection awareness, and vehicle care."
+TRUE,ASSESS_VALET_PORTER,3,A customer’s vehicle is not ready when they arrive. How would you handle the interaction?,Paragraph,TRUE,,15,"Tests communication, calmness, and customer experience mindset."
+TRUE,ASSESS_VALET_PORTER,4,What would you do if you noticed damage on a vehicle before moving it?,Paragraph,TRUE,,15,"Tests documentation, honesty, and escalation."
+TRUE,ASSESS_VALET_PORTER,5,How comfortable are you driving and parking high-value European vehicles carefully?,Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests role readiness.
+TRUE,ASSESS_VALET_PORTER,6,What does professionalism look like when interacting with customers?,Paragraph,TRUE,,15,Tests customer-facing maturity.
+TRUE,ASSESS_VALET_PORTER,7,How do you stay organized when multiple people are asking you for help at once?,Paragraph,TRUE,,10,"Tests pace, prioritization, and communication."
+TRUE,ASSESS_VALET_PORTER,8,Which statement best describes you?,Multiple choice,TRUE,I follow process even when busy | I move fast and figure it out later | I wait until someone tells me every step | I prefer not to interact with customers,10,Preferred answer shows process discipline.
+TRUE,ASSESS_VALET_PORTER,9,What makes someone dependable in a customer-facing support role?,Paragraph,TRUE,,10,Tests reliability and ownership.
+TRUE,ASSESS_VALET_PORTER,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_PARTS,1,Why are you interested in the Parts role at Frank’s European Service?,Paragraph,TRUE,,5,Evaluates motivation and role understanding.
+TRUE,ASSESS_PARTS,2,What information do you need before ordering a European vehicle part?,Paragraph,TRUE,,15,"Tests accuracy, VIN awareness, and process discipline."
+TRUE,ASSESS_PARTS,3,A part arrives incorrect and the vehicle is promised today. What do you do?,Paragraph,TRUE,,15,"Tests urgency, communication, and problem-solving."
+TRUE,ASSESS_PARTS,4,"How would you track vendor invoice numbers, warranty information, ETAs, and part availability?",Paragraph,TRUE,,15,Tests documentation and organization.
+TRUE,ASSESS_PARTS,5,How comfortable are you communicating with vendors by phone and email throughout the day?,Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests vendor communication readiness.
+TRUE,ASSESS_PARTS,6,What would you do if a technician says the ordered part does not match the vehicle?,Paragraph,TRUE,,15,"Tests accountability, verification, and escalation."
+TRUE,ASSESS_PARTS,7,How do you balance speed and accuracy in a parts department?,Paragraph,TRUE,,10,Tests judgment under pressure.
+TRUE,ASSESS_PARTS,8,Which statement best describes your parts process?,Multiple choice,TRUE,"Verify first, order accurately, document clearly | Order quickly and fix problems later | Let the technician figure out fitment | Avoid calling vendors unless necessary",10,Preferred answer shows accuracy and documentation.
+TRUE,ASSESS_PARTS,9,"What experience do you have with automotive parts, inventory, vendors, or repair order support?",Paragraph,TRUE,,10,Tests experience alignment.
+TRUE,ASSESS_PARTS,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_CX,1,Why are you interested in the Customer Experience role at Frank’s European Service?,Paragraph,TRUE,,5,Evaluates motivation and customer-first mindset.
+TRUE,ASSESS_CX,2,What does an excellent customer experience feel like to the customer?,Paragraph,TRUE,,15,Tests service philosophy and hospitality mindset.
+TRUE,ASSESS_CX,3,A customer is frustrated because they expected faster communication. What do you do?,Paragraph,TRUE,,15,"Tests empathy, ownership, and service recovery."
+TRUE,ASSESS_CX,4,How would you follow up with a customer after service to make sure they felt taken care of?,Paragraph,TRUE,,15,Tests follow-through and relationship-building.
+TRUE,ASSESS_CX,5,"How comfortable are you calling customers, asking questions, and documenting feedback?",Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests communication readiness.
+TRUE,ASSESS_CX,6,What would you do if a customer shared negative feedback about their visit?,Paragraph,TRUE,,15,Tests escalation judgment and emotional control.
+TRUE,ASSESS_CX,7,How do you stay positive and professional during a busy or stressful day?,Paragraph,TRUE,,10,"Tests attitude, resilience, and professionalism."
+TRUE,ASSESS_CX,8,Which statement best describes your customer service style?,Multiple choice,TRUE,"Listen carefully, take ownership, and follow through | Be friendly but avoid difficult conversations | Tell customers what they want to hear | Transfer the issue to someone else quickly",10,Preferred answer shows ownership and follow-through.
+TRUE,ASSESS_CX,9,What details should be documented after a customer follow-up call?,Paragraph,TRUE,,10,Tests documentation and process discipline.
+TRUE,ASSESS_CX,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_ADMIN,1,Why are you interested in the Admin role at Frank’s European Service?,Paragraph,TRUE,,5,Evaluates motivation and role understanding.
+TRUE,ASSESS_ADMIN,2,"How do you stay organized when managing several tasks, deadlines, or requests at once?",Paragraph,TRUE,,15,Tests organization and prioritization.
+TRUE,ASSESS_ADMIN,3,"What would you do if you found an error in a report, form, or spreadsheet that had already been shared?",Paragraph,TRUE,,15,"Tests honesty, correction process, and communication."
+TRUE,ASSESS_ADMIN,4,"How do you handle confidential employee, customer, or business information?",Paragraph,TRUE,,15,Tests confidentiality and judgment.
+TRUE,ASSESS_ADMIN,5,"How comfortable are you using Google Sheets, Gmail, Drive, Docs, and forms?",Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests Google Workspace readiness.
+TRUE,ASSESS_ADMIN,6,Describe your process for completing repetitive work accurately.,Paragraph,TRUE,,15,Tests consistency and detail orientation.
+TRUE,ASSESS_ADMIN,7,How do you communicate when you are unclear about instructions?,Paragraph,TRUE,,10,Tests coachability and communication.
+TRUE,ASSESS_ADMIN,8,Which statement best describes your work style?,Multiple choice,TRUE,"Organized, accurate, and proactive | Fast but sometimes messy | I wait for detailed direction before acting | I prefer not to handle details",10,Preferred answer shows organization and ownership.
+TRUE,ASSESS_ADMIN,9,"What administrative tools, systems, or reporting work have you used before?",Paragraph,TRUE,,10,Tests experience alignment.
+TRUE,ASSESS_ADMIN,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
+TRUE,ASSESS_SHOP_FOREMAN,1,Why are you interested in the Shop Foreman role at Frank’s European Service?,Paragraph,TRUE,,5,"Evaluates motivation, leadership maturity, and alignment."
+TRUE,ASSESS_SHOP_FOREMAN,2,A technician repeatedly submits incomplete diagnostic notes. How do you address it?,Paragraph,TRUE,,15,"Tests coaching, accountability, and documentation standards."
+TRUE,ASSESS_SHOP_FOREMAN,3,How do you decide whether a vehicle is ready to move forward in the workflow?,Paragraph,TRUE,,15,Tests quality control and workflow judgment.
+TRUE,ASSESS_SHOP_FOREMAN,4,Two technicians disagree about the cause of a failure. How do you handle it?,Paragraph,TRUE,,15,"Tests leadership, diagnostic judgment, and conflict resolution."
+TRUE,ASSESS_SHOP_FOREMAN,5,How comfortable are you coaching technicians while still holding them accountable?,Linear scale,TRUE,1 - Not comfortable | 2 | 3 | 4 | 5 - Very comfortable,10,Tests leadership readiness.
+TRUE,ASSESS_SHOP_FOREMAN,6,Describe your diagnostic process on a complex electrical or drivability concern.,Paragraph,TRUE,,15,Tests senior technical ability.
+TRUE,ASSESS_SHOP_FOREMAN,7,How do you prevent comebacks and rechecks from becoming repeated patterns?,Paragraph,TRUE,,10,Tests quality system thinking.
+TRUE,ASSESS_SHOP_FOREMAN,8,Which statement best describes your leadership style?,Multiple choice,TRUE,"Clear standards, coaching, accountability, and follow-through | Fix it myself so it gets done faster | Avoid conflict unless absolutely necessary | Let each technician work however they prefer",10,Preferred answer shows standards and accountability.
+TRUE,ASSESS_SHOP_FOREMAN,9,How would you support advisors when a diagnostic explanation is unclear or incomplete?,Paragraph,TRUE,,10,Tests cross-department communication.
+TRUE,ASSESS_SHOP_FOREMAN,10,What would you want clarified in a Google Meet interview about this role?,Paragraph,FALSE,,5,Helps create interview worksheet questions.
