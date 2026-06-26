@@ -94,19 +94,15 @@ function DIGEST_previewHtml() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildDigestHtml_() {
+  var condensed = CFG.getBool('DIGEST_CONDENSED_MODE', true);
+  var deepLinks = CFG.getBool('DIGEST_DEEP_LINKS_ENABLED', true);
+
   var kpi    = _digestKpis_();
   var action = _digestActionItems_();
-  var trans  = _digestRecentTranscripts_();
   var top    = _digestTopCandidates_();
   var health = _digestHealth_();
-  var leads     = _digestNewLeads_();
-  var aiFails   = _digestAiFailures_();
-  var backfillQ = _digestBackfillReview_();
   var todayIv   = _digestTodaysInterviews_();
-  var unmatched = _digestUnmatchedTranscripts_();
-  var aiAuthor  = _digestAiAuthoredSuspects_();
   var refs      = _digestReferenceStatus_();
-  var skipped   = _digestSkippedTranscripts_();
 
   var css = 'font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.5;color:#222;';
   var hd  = 'style="background:#0b3d2e;color:#fff;padding:14px 18px;border-radius:6px 6px 0 0;font-size:18px;font-weight:600;"';
@@ -130,6 +126,33 @@ function buildDigestHtml_() {
     return '<table style="width:100%;border-collapse:collapse;">' + h + b + '</table>';
   }
 
+  // Action items, rendered with a per-candidate deep link straight to their row
+  // on the Interview Pipeline (where the Manager Decision dropdown lives).
+  function actionItemsTable(rows) {
+    if (!rows.length) {
+      return '<div style="color:#0b3d2e;font-weight:600;">✓ Nobody is waiting on a decision right now.</div>';
+    }
+    var headers = ['Candidate', 'Role', 'Score', 'Risk', 'AI Recommendation', deepLinks ? 'Decide' : 'Status'];
+    var h = '<thead><tr>' + headers.map(function (x) { return '<th ' + th + '>' + escapeHtml_(x) + '</th>'; }).join('') + '</tr></thead>';
+    var b = '<tbody>' + rows.map(function (a) {
+      var nameCell = (deepLinks && a.row)
+        ? '<a href="' + _pipelineDeepLink_(a.row) + '" style="color:#0b6cff;font-weight:600;text-decoration:none;">' + escapeHtml_(String(a.name || '?')) + '</a>'
+        : escapeHtml_(String(a.name || '?'));
+      var lastCell = (deepLinks && a.row)
+        ? '<a href="' + _pipelineDeepLink_(a.row) + '" style="display:inline-block;background:#0b6cff;color:#fff;padding:5px 12px;border-radius:4px;text-decoration:none;font-size:12px;font-weight:600;">Pick decision →</a>'
+        : escapeHtml_(String(a.status || ''));
+      return '<tr>' +
+        '<td ' + td + '>' + nameCell + '</td>' +
+        '<td ' + td + '>' + escapeHtml_(String(a.role || '')) + '</td>' +
+        '<td ' + td + '>' + escapeHtml_(String(a.score == null ? '' : a.score)) + '</td>' +
+        '<td ' + td + '>' + escapeHtml_(String(a.risk == null ? '' : a.risk)) + '</td>' +
+        '<td ' + td + '>' + escapeHtml_(String(a.recommendation || '')) + '</td>' +
+        '<td ' + td + '>' + lastCell + '</td>' +
+      '</tr>';
+    }).join('') + '</tbody>';
+    return '<table style="width:100%;border-collapse:collapse;">' + h + b + '</table>';
+  }
+
   var kpiHtml = '<table style="width:100%;border-collapse:separate;border-spacing:6px;"><tr>' +
     kpi.map(function (k) {
       return '<td style="background:#f3f4f6;padding:12px;border-radius:4px;width:25%;vertical-align:top;">' +
@@ -139,15 +162,61 @@ function buildDigestHtml_() {
              '</td>';
     }).join('') + '</tr></table>';
 
-  return '<div style="' + css + '">' +
-    '<h2 style="margin:0 0 16px 0;color:#0b3d2e;">Recruiting Daily Digest</h2>' +
-    '<div style="color:#666;margin-bottom:18px;">' + escapeHtml_(shopDateTime_()) + ' · Mode: ' +
+  // Big call-to-action button: jump straight to the one tab the GM works from.
+  var ctaButton = deepLinks
+    ? '<div style="margin:0 0 18px 0;">' +
+        '<a href="' + _pipelineDeepLink_(0) + '" style="display:inline-block;background:#0b3d2e;color:#fff;' +
+        'padding:12px 22px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">' +
+        'Open Interview Pipeline →</a>' +
+        '<div style="color:#888;font-size:12px;margin-top:6px;">Your only daily job: read the AI recommendation, then pick a “Manager Decision”.</div>' +
+      '</div>'
+    : '';
+
+  // A compact attention strip — surfaces ONLY real problems so the GM is never
+  // blind to breakage but isn't shown routine zeros. Used in condensed mode.
+  var attention = _digestAttentionStrip_(health);
+
+  var head =
+    '<div style="' + css + '">' +
+    '<h2 style="margin:0 0 6px 0;color:#0b3d2e;">Recruiting ' + escapeHtml_(_digestPeriodLabel_()) + '</h2>' +
+    '<div style="color:#666;margin-bottom:16px;">' + escapeHtml_(shopDateTime_()) + ' · Mode: ' +
        (isLiveMode_() ? '<b style="color:#0b3d2e;">LIVE</b>' : '<b style="color:#b25e09;">TEST</b>') + '</div>' +
+    ctaButton +
+    (attention ? attention : '');
+
+  var foot =
+    '<div style="color:#888;font-size:11px;margin-top:8px;">Powered by Recruiting OS · ' +
+      escapeHtml_(CFG.get('SHOP_NAME')) + '</div>' +
+    '</div>';
+
+  // ── CONDENSED (GM) MODE — only what the manager must act on ──────────────────
+  if (condensed) {
+    return head +
+      section('KPIs', kpiHtml) +
+      section('🟡 Needs your decision', actionItemsTable(action)) +
+      section('📅 Today’s interviews & worksheets', table(
+        ['Candidate', 'Role', 'Interview Type', 'Time', 'Worksheet Email'],
+        todayIv.map(function (t) { return [t.name, t.role, t.type, t.time, t.emailStatus]; })
+      )) +
+      '<div style="color:#888;font-size:12px;margin:4px 0 16px 0;">' +
+        'Everything else — scoring, transcript grading, references, booking detection — runs automatically. ' +
+        'Switch to the full operational report by setting <b>DIGEST_CONDENSED_MODE=FALSE</b> in the Config tab.' +
+      '</div>' +
+      foot;
+  }
+
+  // ── FULL (operational) MODE — every diagnostic section ───────────────────────
+  var trans     = _digestRecentTranscripts_();
+  var leads     = _digestNewLeads_();
+  var aiFails   = _digestAiFailures_();
+  var backfillQ = _digestBackfillReview_();
+  var unmatched = _digestUnmatchedTranscripts_();
+  var aiAuthor  = _digestAiAuthoredSuspects_();
+  var skipped   = _digestSkippedTranscripts_();
+
+  return head +
     section('KPIs', kpiHtml) +
-    section('Action items — pick a Manager Decision', table(
-      ['Candidate', 'Role', 'Score', 'Risk', 'Recommendation', 'Status'],
-      action.map(function (a) { return [a.name, a.role, a.score, a.risk, a.recommendation, a.status]; })
-    )) +
+    section('🟡 Needs your decision', actionItemsTable(action)) +
     section('Recently graded transcripts', table(
       ['Candidate', 'Role', 'Phase', 'AI Score', 'Risk', 'Date'],
       trans.map(function (t) { return [t.name, t.role, t.phase, t.score, t.risk, t.date]; })
@@ -192,9 +261,46 @@ function buildDigestHtml_() {
       ['Metric', 'Count'],
       health.map(function (h) { return [h.label, h.value]; })
     )) +
-    '<div style="color:#888;font-size:11px;margin-top:8px;">Powered by Recruiting OS · ' +
-      escapeHtml_(CFG.get('SHOP_NAME')) + '</div>' +
-  '</div>';
+    foot;
+}
+
+/**
+ * Deep link to the Interview Pipeline tab. With a row number it points the
+ * browser straight at that candidate's row; with 0 it just opens the tab.
+ * Returns the bare spreadsheet URL if anything is unavailable (never throws).
+ */
+function _pipelineDeepLink_(rowNum) {
+  try {
+    var ss  = SpreadsheetApp.getActive();
+    var url = ss.getUrl();
+    var sh  = ss.getSheetByName(SHEETS.INTERVIEW_PIPELINE);
+    var gid = sh ? sh.getSheetId() : 0;
+    var frag = '#gid=' + gid + (rowNum ? '&range=A' + rowNum : '');
+    return url + frag;
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Compact red attention strip for the top of the digest. Returns '' when there
+ * is nothing wrong, so the GM only ever sees it when action is genuinely needed.
+ * Reads the same health array the digest already computed (no extra queries).
+ */
+function _digestAttentionStrip_(health) {
+  var alerts = [];
+  (health || []).forEach(function (h) {
+    var v = String(h.value);
+    if (h.label === 'BLOCKED emails' && parseInt(v, 10) > 0) alerts.push(v + ' BLOCKED email(s) — run “Recover Blocked Email Queue”');
+    if (h.label === 'Triggers missing' && v !== '0' && v !== '') alerts.push('Triggers missing: ' + v);
+    if (h.label === 'AI grading' && v.indexOf('ready') === -1) alerts.push('AI grading ' + v);
+    if (h.label === 'Errors past 24h' && parseInt(v, 10) > 0) alerts.push(v + ' error(s) in the past 24h — see the Error Log tab');
+  });
+  if (!alerts.length) return '';
+  return '<div style="background:#fdecea;border:1px solid #f5c2c0;border-radius:6px;padding:12px 16px;margin-bottom:18px;color:#8a1f1b;">' +
+           '<b>⚠ Needs attention:</b><ul style="margin:6px 0 0 18px;padding:0;">' +
+           alerts.map(function (a) { return '<li>' + escapeHtml_(a) + '</li>'; }).join('') +
+           '</ul></div>';
 }
 
 function _digestPlainFallback_(html) {
@@ -253,7 +359,8 @@ function _digestActionItems_() {
       score: hScore !== -1 ? data[i][hScore] : '',
       risk: hRisk !== -1 ? data[i][hRisk] : '',
       recommendation: hRec !== -1 ? data[i][hRec] : '',
-      status: st
+      status: st,
+      row: i + 2   // sheet row (data starts at row 2) — drives the deep link
     });
   }
   // Newest first

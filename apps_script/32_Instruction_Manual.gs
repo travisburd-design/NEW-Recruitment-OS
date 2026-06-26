@@ -74,6 +74,84 @@ function buildInstructionManual() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC: buildGmQuickStart — a short, GM-focused "your daily job" one-pager.
+// Distinct from the comprehensive Instruction Manual: this is the 3-step card a
+// General Manager reads to run hiring without learning the whole system.
+// ─────────────────────────────────────────────────────────────────────────────
+
+var GM_QUICKSTART_SHEET   = 'GM Daily';
+var GM_QUICKSTART_HEADERS = ['Step', 'What you do'];
+
+function buildGmQuickStart() {
+  return safeRun_('buildGmQuickStart', function () {
+    return withLock_(function () {
+      var name = (typeof SHEETS !== 'undefined' && SHEETS.GM_QUICKSTART) ? SHEETS.GM_QUICKSTART : GM_QUICKSTART_SHEET;
+      var sh = getOrCreateSheet_(name, GM_QUICKSTART_HEADERS);
+      sh.clearContents();
+
+      var dec = function (k, dflt) { return CFG.get(k, dflt); };
+      var rows = [
+        ['☀️  START HERE — your whole job is 3 steps',
+         'You work from ONE tab ("Interview Pipeline") and ONE column ("Manager Decision"). ' +
+         'The system does everything else — scoring, emailing candidates, booking, references, reminders.'],
+
+        ['1.  Read your email',
+         'Twice a day you get a "Recruiting Morning Brief / Afternoon Update" email. ' +
+         'The "Needs your decision" list is everyone waiting on you. Click a candidate\'s name, or the ' +
+         '"Open Interview Pipeline →" button, to jump straight to their row.'],
+
+        ['2.  Pick a Manager Decision',
+         'On the Interview Pipeline tab, read the AI Recommendation (green column), then choose a value in the ' +
+         'Manager Decision dropdown (amber column). That single click sends the right candidate email and moves ' +
+         'them to the next stage automatically. You never type a status or send an email yourself.'],
+
+        ['3.  The 3 decisions you\'ll use most',
+         '①  ' + dec('DECISION_ADVANCE_LIVE', 'Advance to Live Interview') + ' — invites them to book the live interview.\n' +
+         '②  ' + dec('DECISION_REQUEST_REFERENCES', 'Request References') + ' — sends references + culture-fit forms; the rest runs unattended.\n' +
+         '③  ' + dec('DECISION_HIRED', 'Confirm Hire') + ' — congratulations email + onboarding checklist.\n' +
+         '     …or ' + dec('DECISION_PUT_IN_DRAWER', 'Put in the Drawer') + ' to keep them warm without hiring.'],
+
+        ['Made a mistake?',
+         'Pick "' + dec('DECISION_REOPEN', 'Reopen Candidate') + '". Rejection and "drawer" emails are delayed and ' +
+         'cancellable — reopening cancels the pending email before it ever sends.'],
+
+        ['Other choices (rarely needed)',
+         dec('DECISION_ADVANCE_PHONE', 'Send Phone Screen Booking') + ', ' +
+         dec('DECISION_ADVANCE_WORKING', 'Send Working Interview') + ', ' +
+         dec('DECISION_MAKE_OFFER', 'Extend Offer') + ', ' +
+         dec('DECISION_NEEDS_INFO', 'Needs More Info') + ', ' +
+         dec('DECISION_REJECT', 'Reject') + ' (set the Rejection Reason first), ' +
+         dec('DECISION_ARCHIVE', 'Archive — No Email') + '.'],
+
+        ['Am I sending real emails?',
+         'Check the menu: ⚙ Mode & Status → "Current Mode / Status". TEST = nothing reaches real candidates ' +
+         '(everything reroutes to ' + CFG.get('TEST_RECIPIENT_EMAIL', 'your test inbox') + '). LIVE = real candidates ' +
+         'are emailed. To flip on: ⚙ Mode & Status → "GO LIVE".'],
+
+        ['Want more detail?',
+         'The full operator guide is on the "Instruction Manual" tab. One-time setup steps are on the ' +
+         '"Manual Setup Registry" tab. To re-tidy this view any time: 🛠 Recruiting OS menu → 🔧 Admin & Setup.']
+      ];
+
+      // Title banner in row 1 (overwrite the header row with a friendly title).
+      sh.getRange(1, 1, 1, 2).setValues([['GM Daily — run hiring in 3 steps', '']]);
+      sh.getRange(1, 1, 1, 2).merge().setFontWeight('bold').setFontSize(14)
+        .setBackground('#0b3d2e').setFontColor('#ffffff').setHorizontalAlignment('left');
+      sh.setFrozenRows(1);
+
+      sh.getRange(2, 1, rows.length, 2).setValues(rows);
+      sh.setColumnWidth(1, 300);
+      sh.setColumnWidth(2, 860);
+      sh.getRange(2, 1, rows.length, 1).setFontWeight('bold').setVerticalAlignment('top');
+      sh.getRange(2, 2, rows.length, 1).setWrap(true).setVerticalAlignment('top');
+
+      toast_('GM Daily quick-start rebuilt (' + rows.length + ' steps).', 'Recruiting OS', 5);
+      return rows.length;
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION BUILDER — describes A's ACTUAL system.
 // Returns [[Section, Content], ...] for one batched write.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -291,6 +369,7 @@ function tabsExplanation_() {
   desc[SHEETS.INTERVIEW_WORKSHEETS]  = 'Tailored interview prep sheets generated per upcoming interview.';
   desc[SHEETS.RAW_HIRING_EMAIL_LEADS]= 'Imported hiring leads from Indeed / ACT Auto Staffing emails, awaiting pre-screen invite.';
   desc[SHEETS.DASHBOARD]             = 'Your live metrics view (layout is yours — bootstrap never overwrites it).';
+  desc[SHEETS.GM_QUICKSTART]         = 'The General Manager\'s 3-step daily card — read this first (rebuilt by buildGmQuickStart()).';
 
   // These two are owned by this file and may not be in SHEETS yet.
   var lines = [];
