@@ -1106,6 +1106,63 @@ function showInterviewPipelineColumns() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CLEAN "GM VIEW" — show ONLY the columns the General Manager needs, in their
+// natural order (Final Recommendation sits immediately left of Manager
+// Decision), and visually highlight the two columns the eye should land on.
+// Reversible via showInterviewPipelineColumns(). Stronger than the legacy
+// tidyInterviewPipelineColumns() (which only hides a handful of old columns).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The only columns a GM works with day to day. Everything else is hidden.
+var GM_PIPELINE_KEEP_COLUMNS = [
+  'First Name', 'Last Name', 'Role', 'Pre-Screen Score', 'Risk Score',
+  'Final Recommendation', 'Manager Decision', 'Rejection Reason',
+  'Status', 'Next Action Due', 'Last Updated', 'Notes'
+];
+
+/**
+ * Apply the clean GM view to the Interview Pipeline: hide every column that is
+ * not in GM_PIPELINE_KEEP_COLUMNS, freeze the header row, and (when
+ * GM_PIPELINE_VIEW_HIGHLIGHT=TRUE) tint the AI Recommendation column green and
+ * the Manager Decision column amber so the manager's eye lands on the decision.
+ * Idempotent and reversible (showInterviewPipelineColumns()).
+ */
+function applyGmPipelineView() {
+  return withLock_(function () {
+    var sh = getSheet_(SHEETS.INTERVIEW_PIPELINE);
+    var headers = getHeaderRow_(sh);
+    var keep = {};
+    GM_PIPELINE_KEEP_COLUMNS.forEach(function (n) { keep[n] = true; });
+
+    // Start from a known state: show everything, then hide the non-keep columns.
+    sh.showColumns(1, sh.getMaxColumns());
+    var hidden = 0, shown = [];
+    headers.forEach(function (name, i) {
+      var col = i + 1;
+      if (name && keep[name]) { shown.push(name); }
+      else if (name) { sh.hideColumns(col); hidden++; }
+    });
+
+    sh.setFrozenRows(1);
+
+    // Highlight the two columns that drive the workflow.
+    if (CFG.getBool('GM_PIPELINE_VIEW_HIGHLIGHT', true)) {
+      var lastRow = Math.max(sh.getLastRow(), 2);
+      var recCol = headers.indexOf('Final Recommendation') + 1;
+      var decCol = headers.indexOf('Manager Decision') + 1;
+      if (recCol > 0) sh.getRange(2, recCol, lastRow - 1, 1).setBackground('#e6f4ea');
+      if (decCol > 0) sh.getRange(2, decCol, lastRow - 1, 1).setBackground('#fff3cd');
+    }
+
+    var msg = '[PIPELINE] GM view applied — showing ' + shown.length + ' columns, hid ' + hidden +
+              '. Visible: ' + shown.join(', ');
+    Logger.log(msg);
+    toast_('Clean GM view applied — ' + shown.length + ' columns shown, ' + hidden + ' hidden', 'Recruiting OS', 6);
+    return msg;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 11. BULK-ARCHIVE STALE BACKFILL ROWS — clears the MANUAL_REVIEW backlog
 // ─────────────────────────────────────────────────────────────────────────────
 

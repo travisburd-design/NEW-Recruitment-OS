@@ -77,6 +77,7 @@ var SHEETS = Object.freeze({
   // Documentation / setup
   INSTRUCTION_MANUAL:     'Instruction Manual',
   MANUAL_SETUP_REGISTRY:  'Manual Setup Registry',
+  GM_QUICKSTART:          'GM Daily',            // short 3-step guide for the General Manager
 
   // Dashboard
   DASHBOARD:              'Dashboard'
@@ -374,6 +375,14 @@ var CFG_DEFAULTS = Object.freeze({
 
   // Daily digest — sent twice a day (morning brief + afternoon wrap-up)
   DAILY_DIGEST_ENABLED:                 'TRUE',
+  // GM-focused digest: when TRUE the email shows only what the General Manager
+  // must act on (KPIs, "Needs your decision", today's interviews) plus a small
+  // attention strip if something is broken. Set FALSE for the full operational
+  // digest (all transcript / backfill / health diagnostics sections).
+  DIGEST_CONDENSED_MODE:                'TRUE',
+  // Add a clickable "Open Interview Pipeline" button + per-candidate deep links
+  // to the digest so a prompt is one tap from the decision dropdown.
+  DIGEST_DEEP_LINKS_ENABLED:            'TRUE',
   DAILY_DIGEST_TIME:                    '15:30',  // legacy single-send time (kept for back-compat)
   DAILY_DIGEST_AM_HOUR:                 '7',       // morning brief hour (0-23)
   DAILY_DIGEST_PM_HOUR:                 '16',      // afternoon wrap-up hour (0-23)
