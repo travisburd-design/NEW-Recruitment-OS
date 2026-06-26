@@ -131,32 +131,14 @@ function manualOverride() {
  */
 function logOverride_(obj) {
   obj = obj || {};
-  var prev = obj.previousValue == null ? '' : String(obj.previousValue);
-  var next = obj.newValue == null ? '' : String(obj.newValue);
-  // Lean architecture: overrides live in the one System Log (Type=OVERRIDE),
-  // not a separate Override Log tab. Falls back to a dedicated tab only if the
-  // System Log doesn't exist yet (pre-migration).
-  var sys = getSheetOrNull_(SHEETS.SYSTEM_LOG);
-  if (sys) {
-    return appendRowByHeader_(sys, {
-      'Timestamp':         shopDateTime_(),
-      'Type':              'OVERRIDE',
-      'Severity':          'INFO',
-      'Label / Event':     String(obj.overrideType || 'Status Override'),
-      'Candidate ID':      String(obj.candidateId || ''),
-      'Function':          String(obj.actor || ''),   // who performed it
-      'Message / Details': prev + ' → ' + next,
-      'Notes':             String(obj.reason || '')
-    });
-  }
   var sh = _getOverrideLogSheet_();
   return appendRowByHeader_(sh, {
     'Timestamp':      shopDateTime_(),
     'Actor':          String(obj.actor || ''),
     'Candidate ID':   String(obj.candidateId || ''),
     'Override Type':  String(obj.overrideType || 'Status'),
-    'Previous Value': prev,
-    'New Value':      next,
+    'Previous Value': obj.previousValue == null ? '' : String(obj.previousValue),
+    'New Value':      obj.newValue == null ? '' : String(obj.newValue),
     'Reason':         String(obj.reason || '')
   });
 }
@@ -168,9 +150,11 @@ function logOverride_(obj) {
 function OVERRIDE_selfTest() {
   var out = ['[OVERRIDE] selfTest starting…'];
 
-  // 1) Overrides now land in the unified System Log (lean architecture).
-  var sys = getSheetOrNull_(SHEETS.SYSTEM_LOG) || getSheetOrNull_(SHEETS.OVERRIDE_LOG);
-  out.push('  ' + (sys ? '✓' : '✗') + ' System Log present (override destination)');
+  // 1) Sheet creation + header integrity
+  var sh = _getOverrideLogSheet_();
+  var hdrs = getHeaderRow_(sh);
+  var headersOk = OVERRIDE_LOG_HEADERS.every(function (h) { return hdrs.indexOf(h) !== -1; });
+  out.push('  ' + (headersOk ? '✓' : '✗') + ' Override Log sheet present with expected headers');
 
   // 2) Status validation: a known value passes, junk fails
   var valid = _validStatusValues_();
@@ -180,25 +164,23 @@ function OVERRIDE_selfTest() {
   out.push('  ' + (junkRejected ? '✓' : '✗') + ' validation rejects an unknown status');
 
   // 3) logOverride_ append (real row, clearly tagged as a self-test)
-  var before = sys ? sys.getLastRow() : 0;
+  var before = sh.getLastRow();
   var rowNum = logOverride_({
     actor:         'OVERRIDE_selfTest',
     candidateId:   'FES-TEST-00000000',
-    overrideType:  'Status Override',
+    overrideType:  'Status',
     previousValue: STATUS.NEW,
     newValue:      STATUS.MANUAL_REVIEW,
     reason:        'self-test — ignore'
   });
-  var after = sys ? sys.getLastRow() : 0;
-  out.push('  ' + (after - before === 1 ? '✓' : '✗') + ' logOverride_ appended 1 row to System Log (row ' + rowNum + ')');
+  var after = sh.getLastRow();
+  out.push('  ' + (after - before === 1 ? '✓' : '✗') + ' logOverride_ appended 1 row (now row ' + rowNum + ')');
 
-  if (sys && rowNum) {
-    var obj = readRowAsObject_(sys, rowNum);
-    var detail = String(obj['Message / Details'] || '');
-    var fieldsOk = (obj['Type'] === 'OVERRIDE') &&
-                   detail.indexOf(STATUS.NEW) !== -1 && detail.indexOf(STATUS.MANUAL_REVIEW) !== -1;
-    out.push('  ' + (fieldsOk ? '✓' : '✗') + ' appended row is Type=OVERRIDE with prev → new detail');
-  }
+  var obj = readRowAsObject_(sh, rowNum);
+  var fieldsOk = obj['Actor'] === 'OVERRIDE_selfTest' &&
+                 obj['New Value'] === STATUS.MANUAL_REVIEW &&
+                 obj['Previous Value'] === STATUS.NEW;
+  out.push('  ' + (fieldsOk ? '✓' : '✗') + ' appended row has correct Actor / Previous / New values');
 
   out.push('[OVERRIDE] selfTest done. Test log row left in place for review.');
   var msg = out.join('\n');

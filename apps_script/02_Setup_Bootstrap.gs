@@ -166,8 +166,10 @@ var SHEET_MANIFEST = [
       'Suggested Interview Questions', 'Summary For Worksheet', 'AI Model Used',
       'Decision Status', 'Decision Reason', 'Status']
   },
-  // Assessment audit events now fold into the unified System Log (Type=ASSESSMENT);
-  // no dedicated Assessment Audit Log tab in the lean architecture.
+  {
+    name: SHEETS.ASSESSMENT_AUDIT_LOG,
+    headers: ['Timestamp', 'Actor', 'Candidate ID', 'Event', 'Previous Value', 'New Value', 'Reason', 'Details']
+  },
 
   // ── 4. Candidate data (existing structures preserved; missing cols appended)
   {
@@ -293,17 +295,18 @@ var SHEET_MANIFEST = [
     ]
   },
   {
-    // Lean architecture: ONE System Log replaces Error Log + Event Log +
-    // Override Log. Type distinguishes EVENT / ERROR / OVERRIDE / SKIP.
-    name: SHEETS.SYSTEM_LOG,
+    name: SHEETS.ERROR_LOG,
     headers: [
-      'Timestamp', 'Type', 'Severity', 'Label / Event', 'Candidate ID',
-      'Function', 'Message / Details', 'Stack', 'Notes'
+      'Timestamp', 'Severity', 'Label', 'Function', 'Candidate ID',
+      'Message', 'Stack', 'Notes'
     ],
     validations: [
-      { column: 'Type', list: ['EVENT', 'ERROR', 'OVERRIDE', 'ASSESSMENT', 'SKIP'] },
       { column: 'Severity', list: ['INFO', 'WARN', 'ERROR', 'CRITICAL'] }
     ]
+  },
+  {
+    name: SHEETS.EVENT_LOG,
+    headers: ['Timestamp', 'Event', 'Candidate ID', 'Function', 'Details', 'Notes']
   },
   {
     name: SHEETS.TRIGGER_HEALTH,
@@ -353,8 +356,12 @@ var SHEET_MANIFEST = [
       'Pre-Screen Invite Status', 'Email Sent At', 'Error', 'Notes'
     ]
   },
-  // Audited manual status override → now written to the unified System Log
-  // (Type=OVERRIDE), so no separate Override Log tab in the lean architecture.
+  // Audited manual status override (31_Override.gs)
+  {
+    name: SHEETS.OVERRIDE_LOG,
+    headers: ['Timestamp', 'Actor', 'Candidate ID', 'Override Type',
+      'Previous Value', 'New Value', 'Reason']
+  },
   // Deterministic risk/DQ backstop audit (33_Deterministic_Risk.gs)
   {
     name: SHEETS.RISK_FLAGS,

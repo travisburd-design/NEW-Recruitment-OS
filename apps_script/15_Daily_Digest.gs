@@ -320,15 +320,8 @@ function _digestTopCandidates_() {
 }
 
 function _digestHealth_() {
-  // Lean architecture: errors and events both live in the one System Log now,
-  // distinguished by the Type/Severity columns.
-  var sysLog = getSheetOrNull_(SHEETS.SYSTEM_LOG) || getSheetOrNull_(SHEETS.ERROR_LOG);
-  var errCount = _countSinceWhere_(sysLog, 'Timestamp', 24, function (row, h) {
-    var sev = h('Severity') !== -1 ? String(row[h('Severity')] || '').toUpperCase() : '';
-    var typ = h('Type') !== -1 ? String(row[h('Type')] || '').toUpperCase() : '';
-    return typ === 'ERROR' || sev === 'ERROR' || sev === 'CRITICAL' || sev === 'WARN';
-  });
-  var evtCount = _countSince_(sysLog, 'Timestamp', 24);
+  var errCount = _countSince_(getSheetOrNull_(SHEETS.ERROR_LOG), 'Timestamp', 24);
+  var evtCount = _countSince_(getSheetOrNull_(SHEETS.EVENT_LOG), 'Timestamp', 24);
   var eq = getSheetOrNull_(SHEETS.EMAIL_QUEUE);
   var pending = _countWhere_(eq, 'Status', function (v) { return v === 'PENDING'; });
   var sent24  = _countSince_(eq, 'Sent At', 24);
@@ -565,25 +558,6 @@ function _countSince_(sheet, timestampCol, hours) {
   for (var i = 0; i < values.length; i++) {
     var t = _coerceDate_(values[i][0]).getTime();
     if (t >= cutoff) n++;
-  }
-  return n;
-}
-
-/** Count rows newer than `hours` whose row passes predicate(rowValues, headerIndexFn). */
-function _countSinceWhere_(sheet, timestampCol, hours, predicate) {
-  if (!sheet) return 0;
-  var last = sheet.getLastRow();
-  if (last < 2) return 0;
-  var headers = getHeaderRow_(sheet);
-  var tsCol = headers.indexOf(timestampCol);
-  if (tsCol === -1) return 0;
-  function h(name) { return headers.indexOf(name); }
-  var cutoff = Date.now() - hours * 3600 * 1000;
-  var rows = sheet.getRange(2, 1, last - 1, headers.length).getValues();
-  var n = 0;
-  for (var i = 0; i < rows.length; i++) {
-    if (_coerceDate_(rows[i][tsCol]).getTime() < cutoff) continue;
-    if (predicate(rows[i], h)) n++;
   }
   return n;
 }

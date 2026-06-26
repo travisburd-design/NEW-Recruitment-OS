@@ -113,9 +113,6 @@ function onOpen() {
 
         // System setup & maintenance
         .addItem('Bootstrap / Repair System',              'bootstrapSystem')
-        .addItem('Lean Migration — PREVIEW (on a copy)',   'LEAN_migratePreview')
-        .addItem('Lean Migration — EXECUTE (on a copy)',   'LEAN_migrateExecute')
-        .addItem('Lean Migration — Delete Drift Tabs',     'LEAN_deleteArchivedDrift')
         .addItem('Seed All Templates',                     'seedAllTemplates')
         .addItem('Rebuild Instruction Manual',             'buildInstructionManual')
         .addItem('Rebuild Manual Setup Registry',          'buildManualSetupRegistry')
