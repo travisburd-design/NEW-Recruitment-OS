@@ -21,6 +21,7 @@ function onOpen() {
       // ── START HERE ─────────────────────────────────────────────────────────
       // The one button to press anytime: syncs everything + shows your day.
       .addItem('⭐ Catch Me Up & Show My Day',              'catchMeUp')
+      .addItem('🗂 Set Up Tabs for New Manager',            'organizeTabsForManager')
       .addItem('👤 Process Selected Candidate Now',         'processSelectedCandidateRow')
       // One-click repair: sync the live sheet to the code (columns, config,
       // templates, triggers), backfill scores, recover wrongful auto-rejects,
