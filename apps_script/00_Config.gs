@@ -383,6 +383,11 @@ var CFG_DEFAULTS = Object.freeze({
   // Add a clickable "Open Interview Pipeline" button + per-candidate deep links
   // to the digest so a prompt is one tap from the decision dropdown.
   DIGEST_DEEP_LINKS_ENABLED:            'TRUE',
+
+  // Manager tab organizer (42_Tab_Organizer.gs): when TRUE, organizeTabsForManager()
+  // hides every tab except the manager's daily 10 (reversible via unhideAllTabs()).
+  // Hidden tabs keep working — code reads them by name and Forms still write to them.
+  GM_TAB_HIDE_SUPPORTING:               'TRUE',
   DAILY_DIGEST_TIME:                    '15:30',  // legacy single-send time (kept for back-compat)
   DAILY_DIGEST_AM_HOUR:                 '7',       // morning brief hour (0-23)
   DAILY_DIGEST_PM_HOUR:                 '16',      // afternoon wrap-up hour (0-23)
