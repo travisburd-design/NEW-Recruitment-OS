@@ -128,9 +128,20 @@ function buildGmQuickStart() {
          '(everything reroutes to ' + CFG.get('TEST_RECIPIENT_EMAIL', 'your test inbox') + '). LIVE = real candidates ' +
          'are emailed. To flip on: ⚙ Mode & Status → "GO LIVE".'],
 
+        ['Your tabs, left to right',
+         (function () {
+           var legend = 'Tab colors: 🟢 green = your daily 10 · 🔵 blue = setup/settings · 🟠 orange = raw candidate data/forms · ⚪ grey = system logs. ' +
+             'Only the green 10 stay visible; the rest are hidden but still running. ' +
+             '(🛠 Recruiting OS → 🔧 Admin & Setup → “Show All Tabs” reveals everything; “Organize Tabs for Manager” re-tidies.)\n\n';
+           var list = (typeof gmTopTenTabs_ === 'function')
+             ? gmTopTenTabs_().map(function (t, i) { return (i + 1) + '.  ' + t[0] + ' — ' + t[1]; }).join('\n')
+             : '(run “Organize Tabs for Manager” from Admin & Setup to lay out your 10 tabs in order)';
+           return legend + list;
+         })()],
+
         ['Want more detail?',
          'The full operator guide is on the "Instruction Manual" tab. One-time setup steps are on the ' +
-         '"Manual Setup Registry" tab. To re-tidy this view any time: 🛠 Recruiting OS menu → 🔧 Admin & Setup.']
+         '"Manual Setup Registry" tab. To re-tidy your tabs any time: 🛠 Recruiting OS → 🔧 Admin & Setup → "Organize Tabs for Manager".']
       ];
 
       // Title banner in row 1 (overwrite the header row with a friendly title).
