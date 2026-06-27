@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Recruiting OS — The District Rollout</title>
+<meta name="description" content="A cinematic walkthrough of scaling the Recruiting OS across 33 locations: stack, rollout, cost, ROI, trajectory, and culture." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0b3d2e;          /* brand green */
+    --ink-2:#0a2f24;
+    --bg:#06100d;           /* near-black green */
+    --bg-2:#0a1813;
+    --paper:#f6f4ec;
+    --gold:#f4b740;
+    --gold-2:#ffd479;
+    --mint:#5fd0a0;
+    --rose:#ff6b6b;
+    --muted:#9fb4ab;
+    --line:rgba(255,255,255,.10);
+    --card:rgba(255,255,255,.04);
+    --maxw:1100px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:#eef5f1;
+    font-family:'Manrope',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden;
+  }
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;line-height:1.05;margin:0 0 .4em;font-weight:900;letter-spacing:-.5px}
+  .serif{font-family:'Fraunces',Georgia,serif}
+  p{margin:0 0 1em}
+  a{color:var(--gold-2)}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+  /* progress + nav */
+  #bar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--gold),var(--mint));z-index:100;transition:width .1s linear}
+  nav#dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);z-index:90;display:flex;flex-direction:column;gap:12px}
+  nav#dots a{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.22);transition:.25s;display:block;position:relative}
+  nav#dots a.active{background:var(--gold);transform:scale(1.35)}
+  nav#dots a span{position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:11px;color:var(--muted);
+    background:rgba(0,0,0,.6);padding:3px 8px;border-radius:6px;opacity:0;pointer-events:none;transition:.2s}
+  nav#dots a:hover span{opacity:1}
+  @media(max-width:760px){nav#dots{display:none}}
+
+  /* sections */
+  section{padding:118px 0;position:relative}
+  .scene{min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+  .kicker{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px}
+  .lede{font-size:clamp(18px,2.3vw,23px);color:#d7e6df;max-width:760px}
+  .big{font-size:clamp(36px,6vw,76px)}
+  .mid{font-size:clamp(28px,4vw,46px)}
+
+  /* reveal */
+  .r{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+  .r.in{opacity:1;transform:none}
+  .r.d1{transition-delay:.08s}.r.d2{transition-delay:.16s}.r.d3{transition-delay:.24s}.r.d4{transition-delay:.32s}.r.d5{transition-delay:.4s}.r.d6{transition-delay:.48s}
+
+  /* hero */
+  #hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;
+    background:radial-gradient(1200px 700px at 70% -10%,rgba(95,208,160,.22),transparent 60%),
+               radial-gradient(900px 600px at 10% 110%,rgba(244,183,64,.16),transparent 55%),
+               linear-gradient(180deg,#06100d,#0a1813)}
+  .grain{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;mix-blend-mode:overlay}
+  .orbit{position:absolute;border:1px solid var(--line);border-radius:50%;animation:spin 40s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #hero h1{font-size:clamp(44px,8.5vw,118px);text-shadow:0 2px 40px rgba(0,0,0,.4)}
+  .hero-sub{font-size:clamp(16px,2.2vw,22px);color:#cfe3da;max-width:620px}
+  .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:999px;font-size:13px;color:#cfe3da}
+  .scrollcue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+  /* generic cards/grid */
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;backdrop-filter:blur(6px)}
+  .card h3{font-family:'Manrope';font-weight:800;font-size:18px;letter-spacing:-.2px;margin-bottom:6px}
+  .card .tag{font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1.5px}
+  .muted{color:var(--muted)}
+  .stat{font-family:'Fraunces';font-weight:900;font-size:clamp(34px,5vw,60px);line-height:1;background:linear-gradient(180deg,#fff,#bfe9d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat.gold{background:linear-gradient(180deg,var(--gold-2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* before/after */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+  @media(max-width:860px){.ba{grid-template-columns:1fr}}
+  .ba .side{padding:30px}
+  .ba .before{background:linear-gradient(180deg,rgba(255,107,107,.10),rgba(255,107,107,.03))}
+  .ba .after{background:linear-gradient(180deg,rgba(95,208,160,.12),rgba(95,208,160,.03));border-left:1px solid var(--line)}
+  .ba h3{font-family:'Manrope';font-weight:800}
+  .ck{list-style:none;padding:0;margin:0}
+  .ck li{padding:9px 0 9px 30px;position:relative;border-bottom:1px dashed var(--line)}
+  .ck li:last-child{border-bottom:0}
+  .ck.bad li::before{content:"✗";position:absolute;left:0;color:var(--rose);font-weight:800}
+  .ck.good li::before{content:"✓";position:absolute;left:0;color:var(--mint);font-weight:800}
+
+  /* timeline */
+  .tl{position:relative;margin-top:30px;padding-left:34px}
+  .tl::before{content:"";position:absolute;left:11px;top:6px;bottom:6px;width:2px;background:linear-gradient(180deg,var(--gold),var(--mint))}
+  .step{position:relative;padding:0 0 26px 0}
+  .step::before{content:attr(data-n);position:absolute;left:-34px;top:0;width:24px;height:24px;border-radius:50%;background:var(--ink);border:2px solid var(--gold);color:var(--gold-2);
+    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Manrope'}
+  .step h3{font-family:'Manrope';font-weight:800;font-size:18px;margin-bottom:3px}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line)}
+  th{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:700}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  tfoot td{font-weight:800;color:#fff;border-top:2px solid var(--line)}
+
+  /* map dots */
+  .locs{display:flex;flex-wrap:wrap;gap:9px;max-width:680px}
+  .loc{width:30px;height:30px;border-radius:8px;background:rgba(95,208,160,.10);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mint);opacity:0;transform:scale(.4);transition:.5s}
+  .loc.in{opacity:1;transform:none}
+
+  /* trajectory chart */
+  .chart{height:280px;display:flex;align-items:flex-end;gap:14px;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+  .colwrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .col{width:100%;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--mint),rgba(95,208,160,.25));height:0;transition:height 1.1s cubic-bezier(.2,.7,.2,1)}
+  .col.gold{background:linear-gradient(180deg,var(--gold-2),rgba(244,183,64,.25))}
+  .colwrap small{color:var(--muted);font-size:12px}
+
+  .quote{font-family:'Fraunces';font-weight:600;font-size:clamp(22px,3.2vw,40px);line-height:1.25;max-width:880px}
+  .divider{height:1px;background:var(--line);margin:8px 0 0}
+  .badge{display:inline-block;font-size:12px;font-weight:700;color:var(--ink);background:var(--gold);padding:4px 10px;border-radius:999px;letter-spacing:.5px}
+  footer{padding:60px 0 90px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);background:#050c0a}
+  .disclaimer{background:rgba(244,183,64,.07);border:1px solid rgba(244,183,64,.25);border-radius:14px;padding:18px 20px;color:#e9dcc0;font-size:14px}
+  .cta{display:inline-block;margin-top:20px;background:linear-gradient(90deg,var(--gold),var(--gold-2));color:#1a1407;font-weight:800;
+    padding:15px 26px;border-radius:999px;text-decoration:none;letter-spacing:.3px}
+  .twocol{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+  @media(max-width:860px){.twocol{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<nav id="dots"></nav>
+
+<!-- HERO -->
+<header id="hero" data-label="Open">
+  <div class="grain"></div>
+  <div class="orbit" style="width:680px;height:680px;left:-180px;bottom:-260px"></div>
+  <div class="orbit" style="width:1100px;height:1100px;right:-380px;top:-420px;animation-duration:90s"></div>
+  <div class="wrap">
+    <div class="r in"><span class="pill">🛠 Recruiting OS &nbsp;·&nbsp; District Edition</span></div>
+    <h1 class="r in d1">Hiring,<br/>on autopilot.</h1>
+    <p class="hero-sub r in d2">One spreadsheet. One dropdown. One email a day.<br/>
+      The end of the District Manager hunting for candidates — across every location, one by one.</p>
+    <div class="r in d3" style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+      <span class="pill">🤖 AI screens &amp; scores</span>
+      <span class="pill">📅 Auto-books interviews</span>
+      <span class="pill">🗂 33 locations, one playbook</span>
+    </div>
+  </div>
+  <div class="scrollcue">Scroll ↓</div>
+</header>
+
+<!-- PROBLEM -->
+<section id="problem" data-label="The problem" class="scene">
+  <div class="wrap">
+    <div class="kicker r">The way it works today</div>
+    <h2 class="big r d1">One person.<br/>Every location.<br/>Every step.</h2>
+    <p class="lede r d2">Today a District Manager personally runs recruiting for <strong>every shop in their district</strong> — by hand, on repeat:</p>
+    <div class="grid g3" style="margin-top:34px">
+      <div class="card r d2"><div class="tag">Sourcing</div><h3>Manually hunting</h3><p class="muted">Scrolling Indeed, sorting résumés, copying names into spreadsheets — for location after location.</p></div>
+      <div class="card r d3"><div class="tag">Screening</div><h3>Repetitive calls</h3><p class="muted">Same phone screen, same questions, same scheduling tag, dozens of times a week.</p></div>
+      <div class="card r d4"><div class="tag">Coordination</div><h3>Calendar tetris</h3><p class="muted">Booking interviews, chasing references, writing rejection emails — all by hand.</p></div>
+      <div class="card r d2"><div class="tag">Inconsistency</div><h3>Every shop different</h3><p class="muted">Quality of hire swings location to location. No shared bar, no audit trail.</p></div>
+      <div class="card r d3"><div class="tag">Slow</div><h3>Bays sit empty</h3><p class="muted">Weeks to fill a tech seat = weeks of lost billable labor at that location.</p></div>
+      <div class="card r d4"><div class="tag">Burnout</div><h3>No leverage</h3><p class="muted">The DM's week is swallowed by recruiting admin instead of running the district.</p></div>
+    </div>
+    <p class="lede r d5" style="margin-top:30px">Multiply that by <strong>33 locations</strong>. The math doesn't scale — the <em>person</em> does, until they break.</p>
+  </div>
+</section>
+
+<!-- THE SHIFT -->
+<section id="shift" data-label="The shift" class="scene" style="background:linear-gradient(180deg,#06100d,#0a1813)">
+  <div class="wrap">
+    <div class="kicker r">What changes</div>
+    <h2 class="big r d1">The DM stops <span style="color:var(--gold)">doing</span><br/>and starts <span style="color:var(--mint)">deciding</span>.</h2>
+    <div class="ba r d2" style="margin-top:34px">
+      <div class="side before">
+        <h3>❌ Before — manual</h3>
+        <ul class="ck bad">
+          <li>Hunt for candidates on job boards</li>
+          <li>Screen and score every résumé by hand</li>
+          <li>Phone-screen, schedule, re-schedule</li>
+          <li>Chase references &amp; write every email</li>
+          <li>Repeat for all 33 locations, forever</li>
+        </ul>
+      </div>
+      <div class="side after">
+        <h3>✅ After — Recruiting OS</h3>
+        <ul class="ck good">
+          <li>Candidates flow in &amp; get AI-scored automatically</li>
+          <li>Qualified ones auto-booked for a screen</li>
+          <li>A twice-daily email lists who needs a decision</li>
+          <li>One dropdown sends the right email &amp; advances them</li>
+          <li>References, grading &amp; reports run unattended</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lede r d3" style="margin-top:30px">The manager opens <strong>one green tab</strong>, reads the AI recommendation, and picks a choice from a dropdown. That's the job.</p>
+  </div>
+</section>
+
+<!-- THE STACK -->
+<section id="stack" data-label="The stack" class="scene">
+  <div class="wrap">
+    <div class="kicker r">What you need to set up</div>
+    <h2 class="mid r d1">The toolkit — accounts to provision</h2>
+    <p class="lede r d2">All proven, low-cost, mostly tools you may already own. The Google Sheet + Apps Script <em>is</em> the application — everything else feeds it.</p>
+    <div class="grid g2" style="margin-top:30px">
+      <div class="card r d2"><div class="tag">Core engine</div><h3>Google Workspace</h3><p class="muted">Sheets, Apps Script, Gmail, Forms, Calendar, Drive. The whole OS runs here. Likely already in place.</p></div>
+      <div class="card r d2"><div class="tag">Intelligence</div><h3>Google Gemini API</h3><p class="muted">Scores pre-screens, grades interview transcripts, drafts reports. Pay-as-you-go — pennies per candidate.</p></div>
+      <div class="card r d3"><div class="tag">Transcripts · in-person</div><h3>Otter.ai</h3><p class="muted">Records &amp; transcribes in-person interviews; piped in automatically for AI grading.</p></div>
+      <div class="card r d3"><div class="tag">Transcripts · online</div><h3>Fathom</h3><p class="muted">Captures online/video interviews. Generous free tier.</p></div>
+      <div class="card r d4"><div class="tag">Automation glue</div><h3>Zapier</h3><p class="muted">Moves Otter transcripts into the sheet. One org-level account covers all locations.</p></div>
+      <div class="card r d4"><div class="tag">Scheduling</div><h3>Koalendar (or Calendly)</h3><p class="muted">Candidate self-booking links for phone, live, and working interviews.</p></div>
+      <div class="card r d5"><div class="tag">Candidate sources</div><h3>Indeed / ACT Auto Staffing</h3><p class="muted">Job leads flow in by email and are auto-imported &amp; invited. Ad spend is pay-for-performance.</p></div>
+      <div class="card r d5"><div class="tag">Optional</div><h3>Custom domain</h3><p class="muted">For a branded oversight dashboard / this very report. ~$12/year.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROLLOUT -->
+<section id="rollout" data-label="Rollout" class="scene" style="background:linear-gradient(180deg,#0a1813,#06100d)">
+  <div class="wrap">
+    <div class="kicker r">From one shop to thirty-three</div>
+    <h2 class="mid r d1">The rollout playbook</h2>
+    <p class="lede r d2">The hard part — building the system — is done. Each new location is a <strong>repeatable clone</strong>, not a rebuild.</p>
+    <div class="tl r d2" style="margin-top:20px">
+      <div class="step" data-n="0"><h3>Package the master template</h3><p class="muted">The current Recruiting OS becomes the gold-copy: Sheet + Apps Script + Forms + config. ✓ Already built.</p></div>
+      <div class="step" data-n="1"><h3>Provision shared accounts</h3><p class="muted">One-time: Gemini API key, Zapier, Otter/Fathom, Koalendar at the org/district level.</p></div>
+      <div class="step" data-n="2"><h3>Clone per location</h3><p class="muted">Copy the master Sheet, paste the Apps Script, link the 5 Google Forms. ~30–45 min each.</p></div>
+      <div class="step" data-n="3"><h3>Configure the shop</h3><p class="muted">Fill the Config tab: shop identity, active roles, hiring manager, booking links, pay ranges.</p></div>
+      <div class="step" data-n="4"><h3>Bootstrap &amp; smoke-test</h3><p class="muted">Run Bootstrap, Seed Templates, Install Triggers; verify end-to-end in safe TEST mode.</p></div>
+      <div class="step" data-n="5"><h3>Set up the manager view</h3><p class="muted">One click: “Set Up Tabs for New Manager” — 10 clean tabs, color-coded, the rest hidden.</p></div>
+      <div class="step" data-n="6"><h3>Train in 15 minutes</h3><p class="muted">The “GM Daily” card teaches the whole job: read the email → pick a dropdown. Then GO LIVE.</p></div>
+      <div class="step" data-n="7"><h3>Scale across the district</h3><p class="muted">Repeat the clone. Monitor every shop from the twice-daily digests. Roll to all 33.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- COST -->
+<section id="cost" data-label="The cost" class="scene">
+  <div class="wrap">
+    <div class="kicker r">What it costs</div>
+    <h2 class="mid r d1">Initial &amp; recurring — the honest numbers</h2>
+    <p class="lede r d2">An <em>illustrative</em> model for all 33 locations. Most spend is per-district, not per-location, so cost barely grows as you scale.</p>
+
+    <div class="grid g3 r d2" style="margin-top:30px">
+      <div class="card"><div class="tag">One-time setup</div><div class="stat" data-count="14000" data-prefix="$" style="margin:8px 0">$0</div><p class="muted">Config, form linking &amp; training across 33 sites (range ≈ $8k–$20k; mostly labor).</p></div>
+      <div class="card"><div class="tag">Recurring · monthly</div><div class="stat gold" data-count="1200" data-prefix="$" style="margin:8px 0">$0</div><p class="muted">All 33 locations combined (range ≈ $400–$1,500/mo, excl. ad spend).</p></div>
+      <div class="card"><div class="tag">Per location · monthly</div><div class="stat" data-count="36" data-prefix="$" style="margin:8px 0">$0</div><p class="muted">Effective platform cost per shop (≈ $12–$45). Less than a single hour of a tech's labor.</p></div>
+    </div>
+
+    <div class="card r d3" style="margin-top:26px;padding:8px 8px 0">
+      <table>
+        <thead><tr><th>Tool</th><th>Scope</th><th class="num">Est. monthly (all 33)</th></tr></thead>
+        <tbody>
+          <tr><td>Google Workspace</td><td>per inbox / often already owned</td><td class="num">$0–$460</td></tr>
+          <tr><td>Gemini API (AI)</td><td>usage — pennies / candidate</td><td class="num">$20–$60</td></tr>
+          <tr><td>Otter.ai</td><td>per interviewer / district</td><td class="num">$120–$300</td></tr>
+          <tr><td>Fathom</td><td>free tier → paid</td><td class="num">$0–$120</td></tr>
+          <tr><td>Zapier</td><td>one org account</td><td class="num">$50–$70</td></tr>
+          <tr><td>Koalendar / Calendly</td><td>free → light paid</td><td class="num">$0–$120</td></tr>
+          <tr><td>Indeed sponsored</td><td>pay-for-performance ad spend</td><td class="num">variable</td></tr>
+        </tbody>
+        <tfoot><tr><td>Platform total</td><td>across 33 locations</td><td class="num">≈ $400–$1,500 / mo</td></tr></tfoot>
+      </table>
+    </div>
+    <p class="muted r d4" style="margin-top:14px;font-size:14px">Indeed/ACT ad spend is a recruiting-marketing line you already pay today — the OS makes every dollar of it convert better.</p>
+  </div>
+</section>
+
+<!-- ROI -->
+<section id="roi" data-label="ROI" class="scene" style="background:linear-gradient(180deg,#06100d,#0a1813)">
+  <div class="wrap">
+    <div class="kicker r">Where the money comes back</div>
+    <h2 class="mid r d1">The return dwarfs the cost</h2>
+    <p class="lede r d2">Four value streams, modeled conservatively. Every figure is an assumption to validate — but even halved, the case holds.</p>
+    <div class="grid g4 r d2" style="margin-top:30px">
+      <div class="card"><div class="tag">DM time freed</div><div class="stat" data-count="10" data-suffix=" hrs" style="margin:6px 0">0</div><p class="muted">per week, per district — back to running shops, not recruiting admin.</p></div>
+      <div class="card"><div class="tag">Faster fills</div><div class="stat gold" data-count="40" data-suffix="%" style="margin:6px 0">0</div><p class="muted">shorter time-to-fill → fewer empty bays → recovered billable labor.</p></div>
+      <div class="card"><div class="tag">Better hires</div><div class="stat" data-count="2" data-prefix="−" data-suffix="×" style="margin:6px 0">0</div><p class="muted">structured, referenced screening cuts costly mis-hires &amp; turnover.</p></div>
+      <div class="card"><div class="tag">Agency fees avoided</div><div class="stat gold" data-count="4000" data-prefix="$" style="margin:6px 0">$0</div><p class="muted">typical per-placement staffing fee — sidestepped on every self-sourced hire.</p></div>
+    </div>
+
+    <div class="twocol r d3" style="margin-top:40px">
+      <div>
+        <h3 class="serif" style="font-size:30px">An illustrative annual model</h3>
+        <p class="muted">Conservative per-location net benefit (time saved + recovered labor + avoided turnover/agency fees), against platform cost:</p>
+        <div class="card" style="margin-top:8px;padding:8px 8px 0">
+          <table>
+            <tbody>
+              <tr><td>Modeled benefit / location / yr</td><td class="num">≈ $18,000+</td></tr>
+              <tr><td>Platform cost / location / yr</td><td class="num">≈ $430</td></tr>
+              <tr><td>Across 33 locations / yr</td><td class="num">≈ $600,000+</td></tr>
+            </tbody>
+            <tfoot><tr><td>Modeled ROI</td><td class="num">≈ 30–40×</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="border-color:rgba(244,183,64,.3)">
+        <div class="badge">The one-liner</div>
+        <p class="quote" style="font-size:26px;margin-top:14px">Spend the price of <span style="color:var(--gold)">one hour of labor</span> per shop, per month — to get back <span style="color:var(--mint)">ten hours of leadership</span> per district, per week.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 33 LOCATIONS -->
+<section id="scale" data-label="At scale" class="scene">
+  <div class="wrap">
+    <div class="kicker r">The whole district, one nervous system</div>
+    <h2 class="mid r d1">What 33 locations running this looks like</h2>
+    <div class="twocol" style="margin-top:24px">
+      <div>
+        <div class="locs r d2" id="locs"></div>
+      </div>
+      <div>
+        <ul class="ck good r d2" style="font-size:17px">
+          <li>One bar for quality of hire at every shop</li>
+          <li>Every candidate gets a fast, fair, branded experience</li>
+          <li>Every decision logged &amp; auditable (EEOC-friendly)</li>
+          <li>District leaders see all 33 pipelines from their inbox</li>
+          <li>New shops &amp; acquisitions onboard in a day, not a quarter</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRAJECTORY -->
+<section id="trajectory" data-label="Trajectory" class="scene" style="background:linear-gradient(180deg,#0a1813,#06100d)">
+  <div class="wrap">
+    <div class="kicker r">If implemented</div>
+    <h2 class="mid r d1">The trajectory</h2>
+    <p class="lede r d2">Staffing is the bottleneck on a service company's growth. Remove it, and capacity, revenue, and expansion compound.</p>
+    <div class="chart r d2" id="chart" style="margin-top:28px">
+      <div class="colwrap"><div class="col" data-h="22"></div><small>Today</small></div>
+      <div class="colwrap"><div class="col" data-h="40"></div><small>Q1</small></div>
+      <div class="colwrap"><div class="col" data-h="58"></div><small>Q2</small></div>
+      <div class="colwrap"><div class="col gold" data-h="74"></div><small>Q3</small></div>
+      <div class="colwrap"><div class="col gold" data-h="92"></div><small>Q4</small></div>
+    </div>
+    <div class="grid g3 r d3" style="margin-top:26px">
+      <div class="card"><h3>Capacity unlocked</h3><p class="muted">Fully-staffed bays mean more cars serviced — revenue you're currently leaving on the table.</p></div>
+      <div class="card"><h3>Expansion-ready</h3><p class="muted">A turnkey hiring playbook makes opening (or acquiring) location 34, 35, 40 low-risk and fast.</p></div>
+      <div class="card"><h3>Compounding data</h3><p class="muted">Every cycle sharpens the scoring &amp; rubrics — the system gets better the more you hire.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CULTURE -->
+<section id="culture" data-label="Culture" class="scene">
+  <div class="wrap">
+    <div class="kicker r">The human dividend</div>
+    <h2 class="mid r d1">What it does to the culture</h2>
+    <p class="quote r d2" style="margin-top:10px">“We hire carefully because every person on our team directly impacts the customer experience.”</p>
+    <p class="lede r d3" style="margin-top:8px">The OS doesn't replace that belief — it <strong>protects</strong> it at scale.</p>
+    <div class="grid g3 r d3" style="margin-top:30px">
+      <div class="card"><div class="tag">Leaders lead</div><h3>DMs do their real job</h3><p class="muted">Recruiting drudgery off their plate; coaching, quality &amp; growth back on it.</p></div>
+      <div class="card"><div class="tag">Fair &amp; consistent</div><h3>Every candidate respected</h3><p class="muted">Same fast, gracious, professional experience at all 33 shops — even the “no”s.</p></div>
+      <div class="card"><div class="tag">Humans decide</div><h3>AI assists, people choose</h3><p class="muted">No one is hired or declined by a number. Judgment stays human; the busywork doesn't.</p></div>
+      <div class="card"><div class="tag">Better teammates</div><h3>Stronger crews</h3><p class="muted">Better-screened, reference-checked hires → teams that trust each other &amp; stay.</p></div>
+      <div class="card"><div class="tag">Brand</div><h3>Employer reputation</h3><p class="muted">A slick, responsive process tells great techs you're a great place to work.</p></div>
+      <div class="card"><div class="tag">Mission</div><h3>Honesty &amp; quality, scaled</h3><p class="muted">The values that built one shop, now enforced by design across the whole company.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSE -->
+<section id="close" data-label="Close" class="scene" style="text-align:center;background:radial-gradient(900px 500px at 50% 0%,rgba(95,208,160,.16),transparent 60%),linear-gradient(180deg,#06100d,#050c0a)">
+  <div class="wrap">
+    <div class="kicker r">The bottom line</div>
+    <h2 class="big r d1">Built once.<br/>Deployed everywhere.</h2>
+    <p class="lede r d2" style="margin:0 auto">A District Manager's recruiting workload, reduced to a daily email and a dropdown — at every location in the company.</p>
+    <div class="r d3"><a class="cta" href="#hero">▲ Replay from the top</a></div>
+    <div class="disclaimer r d4" style="margin:42px auto 0;max-width:760px;text-align:left">
+      <strong>About these numbers.</strong> All dollar figures, percentages, and the ROI multiple above are an <em>illustrative planning model</em> built from typical small-multi-location auto-service assumptions and published list prices — not audited results. Validate Workspace seats, interviewer counts, candidate volume, labor rates, and ad spend with your finance team before budgeting. The capability claims describe the system as built in this repository.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <strong style="color:#cfe3da">Recruiting OS — District Rollout</strong><br/>
+    Frank's European Service · Recruiting OS &nbsp;·&nbsp; Prepared as a planning &amp; scalability brief.<br/>
+    Engine: Google Sheets + Apps Script · AI: Google Gemini · Transcripts: Otter/Fathom · Automation: Zapier.
+  </div>
+</footer>
+
+<script>
+  // progress bar
+  var bar=document.getElementById('bar');
+  function onScroll(){
+    var h=document.documentElement;
+    var sc=(h.scrollTop)/(h.scrollHeight-h.clientHeight);
+    bar.style.width=(sc*100)+'%';
+  }
+  document.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+  // build side nav from sections with data-label
+  var dots=document.getElementById('dots');
+  var secs=[].slice.call(document.querySelectorAll('[data-label]'));
+  secs.forEach(function(s){
+    var a=document.createElement('a');a.href='#'+s.id;
+    a.innerHTML='<span>'+s.getAttribute('data-label')+'</span>';
+    dots.appendChild(a);s._dot=a;
+  });
+
+  // reveal on view + count-up + chart + locs + active dot
+  function animateCount(el){
+    var target=parseFloat(el.getAttribute('data-count'));
+    var pre=el.getAttribute('data-prefix')||'';
+    var suf=el.getAttribute('data-suffix')||'';
+    var dur=1400,start=null;
+    function fmt(n){
+      if(target>=1000) return Math.round(n).toLocaleString();
+      if(target%1!==0) return n.toFixed(1);
+      return Math.round(n).toString();
+    }
+    function tick(t){
+      if(!start)start=t;var p=Math.min((t-start)/dur,1);
+      var e=1-Math.pow(1-p,3); // easeOutCubic
+      el.textContent=pre+fmt(target*e)+suf;
+      if(p<1)requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){
+        en.target.classList.add('in');
+        // count-ups inside
+        en.target.querySelectorAll&&en.target.querySelectorAll('[data-count]').forEach(function(c){
+          if(!c._done){c._done=1;animateCount(c);}
+        });
+        if(en.target.classList.contains('r'))io.unobserve(en.target);
+      }
+    });
+  },{threshold:.18});
+  document.querySelectorAll('.r').forEach(function(el){io.observe(el);});
+  // also observe stat containers that aren't .r
+  document.querySelectorAll('[data-count]').forEach(function(el){io.observe(el);});
+
+  // chart grow when in view
+  var chart=document.getElementById('chart');
+  if(chart){
+    var cio=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(e.isIntersecting){chart.querySelectorAll('.col').forEach(function(c){c.style.height=c.getAttribute('data-h')+'%';});cio.disconnect();}
+    });},{threshold:.3});
+    cio.observe(chart);
+  }
+
+  // build + animate 33 location chips
+  var locs=document.getElementById('locs');
+  if(locs){
+    for(var i=1;i<=33;i++){var d=document.createElement('div');d.className='loc';d.textContent=i;locs.appendChild(d);}
+    var lio=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(e.isIntersecting){
+        var chips=locs.querySelectorAll('.loc');
+        chips.forEach(function(c,idx){setTimeout(function(){c.classList.add('in');},idx*45);});
+        lio.disconnect();
+      }
+    });},{threshold:.2});
+    lio.observe(locs);
+  }
+
+  // active dot via section in view
+  var aio=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting&&e.target._dot){
+      secs.forEach(function(s){s._dot&&s._dot.classList.remove('active');});
+      e.target._dot.classList.add('active');
+    }
+  });},{threshold:.5});
+  secs.forEach(function(s){aio.observe(s);});
+</script>
+</body>
+</html>
