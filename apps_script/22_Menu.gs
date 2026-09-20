@@ -30,7 +30,13 @@ function onOpen() {
       .addItem('🩹 Apply All Audit Fixes (turnkey repair)',  'FIX_applyAllAuditFixes')
       .addItem('✅ Verify Everything (run all self-tests)',  'VERIFY_runAllSelfTests')
       .addSeparator()
-
+      .addItem('🌙 GO LIVE TONIGHT (full cutover)',    'TONIGHT_GO_LIVE')
+      .addItem('🩺 System Status (self-diagnosis)',    'TONIGHT_status')
+      .addItem('🗂 Organize & Color Tabs (V2)',        'V2_organizeTabs')
+      .addItem('🗂 Show All Tabs',                     'unhideAllTabs')
+      .addItem('🖥 Show Hiring Console URL',           'WEBAPP_url')
+      .addItem('🔁 Re-score Techs + Advisors',         'RESCORE_openRoles')
+      .addItem('🖥 Open Hiring Console (here)',        'WEBAPP_openInSheet')
       // ── DAILY ACTIONS ──────────────────────────────────────────────────────
       .addItem('🚀 Send Me Everything Now',                 'sendMeEverythingNow')
       .addItem('📬 Send Daily Digest Now',                  'DIGEST_sendNow')
@@ -126,6 +132,17 @@ function onOpen() {
         .addItem('Prune Log Sheets',                       'pruneLogs')
         .addItem('Install Otter Summary Prompt',           'installOtterSummaryPrompt')
         .addItem('Print Otter Template (to copy)',         'printOtterSummaryTemplate')
+        .addSeparator()
+
+        // Secrets & dormant features (see 50_Admin_Menu_Extras.gs)
+        .addItem('Set Gemini API Key…',                    'ADMIN_setGeminiKey')
+        .addItem('Check Gemini API Key',                   'ADMIN_checkGeminiKey')
+        .addSeparator()
+        .addItem('Preview Auto-Advance (dry run)',         'ADMIN_previewAutoAdvance')
+        .addItem('Install Auto-Advance Trigger',           'ADMIN_installAutoAdvanceTrigger')
+        .addItem('Cancel Pending Auto-Advance',            'ADMIN_cancelAutoAdvance')
+        .addItem('Grading Calibration Report',             'ADMIN_gradingCalibration')
+        .addItem('Re-score Unscored Candidates',           'ADMIN_rescoreUnscored')
         .addSeparator()
 
         // Backfill & repair (idempotent — safe to re-run)

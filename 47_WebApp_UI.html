@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{
+    --bg:#0f1512; --card:#18211d; --line:#26332d; --ink:#eef5f1; --dim:#93a69c;
+    --gold:#e8b24a; --good:#3fb27f; --warn:#e0913a; --bad:#d8564e; --chip:#212d27;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    padding-bottom:60px;-webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;z-index:20;background:#0f1512ee;backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:12px 16px 10px}
+  h1{margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:12px;margin-top:2px}
+  .mode{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:650;
+    letter-spacing:.04em;margin-left:6px}
+  .mode.TEST{background:#4a3a12;color:var(--gold)}
+  .mode.LIVE{background:#123a2a;color:var(--good)}
+  .bar{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .bar::-webkit-scrollbar{display:none}
+  .tab,select{background:var(--chip);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:6px 11px;font-size:13px;white-space:nowrap;cursor:pointer;font-family:inherit}
+  .tab.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:650}
+  main{padding:12px 12px 0;max-width:760px;margin:0 auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px;margin-bottom:10px}
+  .top{display:flex;gap:12px;align-items:flex-start}
+  .score{flex:0 0 58px;text-align:center;border-radius:10px;padding:8px 4px;background:#101815;
+    border:1px solid var(--line)}
+  .score b{display:block;font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+  .score span{display:block;font-size:10px;color:var(--dim);margin-top:3px;letter-spacing:.03em}
+  .s-hi b{color:var(--good)} .s-mid b{color:var(--gold)} .s-lo b{color:var(--bad)} .s-none b{color:var(--dim);font-size:17px}
+  .who{flex:1;min-width:0}
+  .nm{font-weight:650;font-size:16px;letter-spacing:-.01em}
+  .meta{color:var(--dim);font-size:12.5px;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:6px;
+    padding:2px 7px;font-size:11.5px;color:var(--dim)}
+  .chip.risk{border-color:#5c2f2c;color:#e79b95} .chip.gate{background:#3a1f1d;border-color:#6b332e;color:#f0a79f}
+  .chip.ok{border-color:#22503c;color:#7fd3ab}
+  .sum{margin-top:9px;font-size:13.5px;color:#cfded7}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:9px}
+  @media(max-width:520px){.cols{grid-template-columns:1fr}}
+  .col h4{margin:0 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+  .col ul{margin:0;padding-left:15px;font-size:12.5px;color:#c3d4cc}
+  .col li{margin-bottom:2px}
+  details{margin-top:8px}
+  summary{cursor:pointer;font-size:12px;color:var(--dim);outline:none}
+  .bd{font-size:11.5px;color:#a8bcb2;margin-top:5px;line-height:1.6;word-break:break-word}
+  .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  button{border:none;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:600;
+    cursor:pointer;font-family:inherit}
+  .b-go{background:var(--good);color:#06170f}
+  .b-live{background:var(--gold);color:#1a1206}
+  .b-ghost{background:var(--chip);color:var(--dim);border:1px solid var(--line)}
+  .b-no{background:#3a1f1d;color:#f0a79f;border:1px solid #6b332e}
+  a.res{color:var(--gold);text-decoration:none;font-size:12.5px;align-self:center;padding:0 4px}
+  .empty{text-align:center;color:var(--dim);padding:48px 20px;font-size:14px}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;
+    background:#1e2a24;border:1px solid var(--line);color:var(--ink);padding:10px 16px;
+    border-radius:10px;font-size:13.5px;box-shadow:0 8px 28px #0009;max-width:90vw}
+  .toast.err{border-color:#6b332e;background:#2b1b19}
+  .busy{opacity:.45;pointer-events:none}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid #ffffff40;
+    border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><?= shopName ?> — Hiring Console<span id="mode" class="mode"></span></h1>
+  <div class="sub" id="sub">Loading…</div>
+  <div class="bar">
+    <div class="tab on" data-b="decide">Needs decision</div>
+    <div class="tab" data-b="booked">In progress</div>
+    <div class="tab" data-b="all">All active</div>
+    <select id="role"><option value="">All roles</option></select>
+    <div class="tab" id="refresh">Refresh</div>
+  </div>
+</header>
+
+<main id="list"><div class="empty"><span class="spin"></span> Loading candidates…</div></main>
+
+<script>
+var STATE = { bucket:'decide', role:'', data:[] };
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function scoreClass(s){
+  if(s===null||s===undefined) return 's-none';
+  if(s>=80) return 's-hi'; if(s>=60) return 's-mid'; return 's-lo';
+}
+
+function toast(msg, isErr){
+  var t=document.createElement('div');
+  t.className='toast'+(isErr?' err':''); t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();}, isErr?5200:2800);
+}
+
+function load(){
+  document.getElementById('list').innerHTML =
+    '<div class="empty"><span class="spin"></span> Loading…</div>';
+  google.script.run.withSuccessHandler(render)
+    .withFailureHandler(function(e){
+      document.getElementById('list').innerHTML =
+        '<div class="empty">Could not load: '+esc(e.message)+'</div>';
+    })
+    .WEBAPP_getQueue({ bucket: STATE.bucket, role: STATE.role });
+}
+
+function render(res){
+  if(!res || !res.ok){
+    document.getElementById('list').innerHTML =
+      '<div class="empty">'+esc((res&&res.error)||'Error')+'</div>';
+    return;
+  }
+  STATE.data = res.candidates;
+
+  var m=document.getElementById('mode');
+  m.textContent=res.mode; m.className='mode '+res.mode;
+  document.getElementById('sub').textContent =
+    res.counts.decide+' awaiting decision · '+res.counts.booked+' in progress · signed in as '+res.viewer;
+
+  var sel=document.getElementById('role');
+  if(sel.options.length<=1 && res.roles){
+    res.roles.forEach(function(r){
+      var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o);
+    });
+    sel.value=STATE.role;
+  }
+
+  if(!res.candidates.length){
+    document.getElementById('list').innerHTML='<div class="empty">Nothing here. Nice.</div>';
+    return;
+  }
+  document.getElementById('list').innerHTML = res.candidates.map(card).join('');
+}
+
+function card(c){
+  var chips=[];
+  if(c.tier) chips.push('<span class="chip">'+esc(c.tier)+'</span>');
+  chips.push('<span class="chip">'+esc(c.status)+'</span>');
+  if(c.risk!==null) chips.push('<span class="chip'+(c.risk>=5?' risk':'')+'">risk '+c.risk+'</span>');
+  if(c.phoneScore!==null) chips.push('<span class="chip ok">phone '+c.phoneScore+'</span>');
+  if(c.confidence) chips.push('<span class="chip">'+esc(c.confidence)+' confidence</span>');
+  if(c.gateFailed) chips.push('<span class="chip gate">⚠ '+esc(c.gateReasons||'hard gate')+'</span>');
+
+  function list(title,arr){
+    if(!arr||!arr.length) return '';
+    return '<div class="col"><h4>'+title+'</h4><ul>'+
+      arr.slice(0,3).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  }
+
+  var isPhoneDone = c.status==='PHONE_DONE';
+  var isFullDone  = c.status==='FULL_DONE';
+
+  var acts = '';
+  if(isFullDone){
+    acts += btn(c.id,'REQUEST_REFS','Request references','b-go');
+    acts += btn(c.id,'HIRED','Hire','b-live');
+  } else if(isPhoneDone){
+    acts += btn(c.id,'ADVANCE_LIVE','Advance to live interview','b-go');
+  } else {
+    acts += btn(c.id,'ADVANCE_PHONE','Send phone screen','b-go');
+    acts += btn(c.id,'ADVANCE_LIVE','Straight to live','b-live');
+  }
+  acts += btn(c.id,'DRAWER','Drawer','b-ghost');
+  acts += btn(c.id,'REJECT','Decline','b-no');
+  if(c.score===null) acts += '<button class="b-ghost" onclick="rescore(\''+c.id+'\',this)">Score now</button>';
+  if(c.resume) acts += '<a class="res" href="'+esc(c.resume)+'" target="_blank" rel="noopener">Resume ↗</a>';
+
+  return '<div class="card" id="c-'+esc(c.id)+'">'+
+    '<div class="top">'+
+      '<div class="score '+scoreClass(c.score)+'"><b>'+(c.score===null?'—':c.score)+'</b><span>SCORE</span></div>'+
+      '<div class="who">'+
+        '<div class="nm">'+esc(c.name)+'</div>'+
+        '<div class="meta">'+esc(c.role)+(c.received?' · applied '+esc(String(c.received).split(' ')[0]):'')+
+          (c.phone?' · '+esc(c.phone):'')+'</div>'+
+        '<div class="chips">'+chips.join('')+'</div>'+
+      '</div>'+
+    '</div>'+
+    (c.summary?'<div class="sum">'+esc(c.summary)+'</div>':'')+
+    ((c.strengths.length||c.concerns.length)?
+      '<div class="cols">'+list('Strengths',c.strengths)+list('Concerns',c.concerns)+'</div>':'')+
+    (c.breakdown?'<details><summary>Score breakdown</summary><div class="bd">'+
+      esc(c.breakdown).split(' | ').join('<br>')+'</div></details>':'')+
+    (c.recommendation?'<div class="meta" style="margin-top:8px">Composite: '+esc(c.recommendation)+'</div>':'')+
+    '<div class="acts">'+acts+'</div>'+
+  '</div>';
+}
+
+function btn(id,action,label,cls){
+  return '<button class="'+cls+'" onclick="decide(\''+id+'\',\''+action+'\',this)">'+label+'</button>';
+}
+
+function decide(id, action, el){
+  var card=document.getElementById('c-'+id);
+  if(card) card.classList.add('busy');
+  el.innerHTML='<span class="spin"></span>';
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r && r.ok){ toast(r.message); if(card) card.remove(); checkEmpty(); }
+      else { toast((r&&r.message)||'Failed', true); if(card) card.classList.remove('busy'); load(); }
+    })
+    .withFailureHandler(function(e){
+      toast('Failed: '+e.message, true);
+      if(card) card.classList.remove('busy'); load();
+    })
+    .WEBAPP_decide(id, action);
+}
+
+function rescore(id, el){
+  el.innerHTML='<span class="spin"></span>';
+  google.script.run
+    .withSuccessHandler(function(r){ toast((r&&r.message)||'Done', !(r&&r.ok)); load(); })
+    .withFailureHandler(function(e){ toast('Failed: '+e.message, true); load(); })
+    .WEBAPP_rescore(id);
+}
+
+function checkEmpty(){
+  if(!document.querySelectorAll('.card').length)
+    document.getElementById('list').innerHTML='<div class="empty">All clear.</div>';
+}
+
+document.querySelectorAll('.tab[data-b]').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab[data-b]').forEach(function(x){x.classList.remove('on');});
+    t.classList.add('on'); STATE.bucket=t.dataset.b; load();
+  });
+});
+document.getElementById('role').addEventListener('change', function(){ STATE.role=this.value; load(); });
+document.getElementById('refresh').addEventListener('click', load);
+
+load();
+</script>
+</body>
+</html>

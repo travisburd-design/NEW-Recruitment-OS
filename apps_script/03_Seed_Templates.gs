@@ -425,17 +425,34 @@ function installAllEmailTemplates() {
 function installAllAiPrompts() {
   return withLock_(function () {
     var sh = getSheet_(SHEETS.AI_PROMPTS);
-    var updated = 0, added = 0;
+    var updated = 0, added = 0, preserved = 0;
+
+    // Prompts OWNED by another module. Seed them if missing, never overwrite.
+    // 'prescreen' is owned by 44_Grading_V2.GRADE_installV2Prompt().
+    // Without this guard, FIX EVERYTHING silently reverts the V2 rubric-anchored
+    // prompt back to v1 — which is what happened on 9/6/26.
+    var SEED_ONLY = { 'prescreen': true };
+
     SEED_AI_PROMPTS.forEach(function (row) {
-      var hits = findRowsByColumnValue_(sh, 'Prompt Key', row['Prompt Key']);
-      if (hits.length) { updateRowWhere_(sh, 'Prompt Key', row['Prompt Key'], row); updated++; }
-      else            { appendRowByHeader_(sh, row); added++; }
+      var key = row['Prompt Key'];
+      var hits = findRowsByColumnValue_(sh, 'Prompt Key', key);
+      if (hits.length) {
+        if (SEED_ONLY[key]) { preserved++; return; }
+        updateRowWhere_(sh, 'Prompt Key', key, row);
+        updated++;
+      } else {
+        appendRowByHeader_(sh, row);
+        added++;
+      }
     });
+
     var msg = '[AI] installAllAiPrompts — updated=' + updated + ' added=' + added +
-              ' (total ' + SEED_AI_PROMPTS.length + ')';
+              ' preserved=' + preserved + ' (total ' + SEED_AI_PROMPTS.length + ')';
     Logger.log(msg);
     toast_(msg, 'Recruiting OS', 6);
-    logEvent_('AI_PROMPTS_INSTALLED', '', { updated: updated, added: added });
+    logEvent_('AI_PROMPTS_INSTALLED', '', {
+      updated: updated, added: added, preserved: preserved
+    });
     return msg;
   });
 }
