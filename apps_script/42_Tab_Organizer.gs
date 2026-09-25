@@ -53,7 +53,8 @@ function _gmTabPlan_() {
       { name: SHEETS.INSTRUCTION_MANUAL,   purpose: 'The full how-to guide. Come back when you are unsure of anything.' },
       { name: SHEETS.DASHBOARD,            purpose: 'Your at-a-glance morning numbers.' },
       { name: SHEETS.INTERVIEW_PIPELINE,   purpose: 'YOUR DAILY TAB — read the AI recommendation, then pick a Manager Decision.' },
-      { name: SHEETS.ALL_CANDIDATES,       purpose: 'The master list of every applicant the system has ever seen.' },
+      { name: SHEETS.ALL_CANDIDATES,       purpose: 'The master list of every applicant the system has ever seen (one row per person).' },
+      { name: 'People Registry',           purpose: 'Employees, former employees, do-not-contact — never emailed, never on the pipeline.' },
       { name: SHEETS.INTERVIEW_WORKSHEETS, purpose: 'Printable interview prep — one sheet per upcoming interview.' },
       { name: SHEETS.ROLE_RULES,           purpose: 'Which roles you are hiring + score minimums, pay range, booking links.' },
       { name: SHEETS.HIRING_MANAGERS,      purpose: 'Your contact info, calendar ID, and booking links.' },
@@ -72,7 +73,7 @@ function _gmTabPlan_() {
       SHEETS.RAW_OTTER_INTAKE, SHEETS.TRANSCRIPT_ARCHIVE, SHEETS.TRANSCRIPT_INBOX,
       SHEETS.ASSESSMENT_RESPONSES, SHEETS.AI_ASSESSMENT_RESULTS,
       SHEETS.CULTURE_FIT, SHEETS.REFERENCE_REQUESTS, SHEETS.REFERENCE_CHECKS,
-      SHEETS.SKILLS_TEST_RESPONSES, SHEETS.RAW_PRESCREEN
+      SHEETS.SKILLS_TEST_RESPONSES, SHEETS.RAW_PRESCREEN, 'Form Responses 6', 'Merged Duplicates', 'Live Advance Queue'
     ],
     // System logs / queues (grey).
     logs: [

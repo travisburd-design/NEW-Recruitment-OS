@@ -17,6 +17,10 @@ function onOpen() {
   try {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('🛠 Recruiting OS')
+      .addSubMenu(ui.createMenu('⭐ Start Here')
+        .addItem('Open Start Here Panel (status + buttons)', 'STARTHERE_showSidebar')
+        .addItem('Refresh Status Now',                       'STARTHERE_refreshNow')
+        .addItem('Fix Missing Applications Now',             'INTAKE_repairDroppedPreScreens'))
 
       // ── START HERE ─────────────────────────────────────────────────────────
       // The one button to press anytime: syncs everything + shows your day.

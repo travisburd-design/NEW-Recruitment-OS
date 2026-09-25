@@ -83,6 +83,17 @@ var GM_QUICKSTART_SHEET   = 'GM Daily';
 var GM_QUICKSTART_HEADERS = ['Step', 'What you do'];
 
 function buildGmQuickStart() {
+  // 9/25/26: GM Daily is now a live status board + guide, rebuilt every 30 min by
+  // 53_Start_Here.gs. This keeps the old menu item working.
+  if (typeof STARTHERE_buildGmDaily_ === 'function') {
+    return safeRun_('buildGmQuickStart', function () {
+      return withLock_(function () {
+        var n = STARTHERE_buildGmDaily_();
+        toast_('GM Daily rebuilt (' + n + ' rows).', 'Recruiting OS', 5);
+        return n;
+      });
+    });
+  }
   return safeRun_('buildGmQuickStart', function () {
     return withLock_(function () {
       var name = (typeof SHEETS !== 'undefined' && SHEETS.GM_QUICKSTART) ? SHEETS.GM_QUICKSTART : GM_QUICKSTART_SHEET;
@@ -178,14 +189,20 @@ function buildManualSections_() {
   rows.push(['System Overview',
     "This Recruiting OS is the operational source of truth for " + shopName + "'s hiring pipeline. " +
     "The Config tab IS the operating system — almost every behavior is a Config key, not a code edit. " +
-    "Candidates enter through ONE Pre-Screen Form (Config PRESCREEN_FORM_URL). A form submit writes a row to " +
+    "Candidates enter through ONE Pre-Screen Form (Config PRESCREEN_FORM_URL). Intake auto-detects whichever " +
+    "'Form Responses' tab the live form writes to (currently Form Responses 6), and a daily 6 AM repair catches any " +
+    "application that did not make it in. A form submit writes a row to " +
     "'All Candidates', the candidate is AI-scored (fit + risk), and routing decides what happens next: " +
     "auto-book a phone screen, hold for manual review, or send a gracious decline. From there the manager works " +
     "candidates through the 'Interview Pipeline' tab using ONE control — the 'Manager Decision' dropdown. " +
     "Status values are written by the script (column Status), never typed by hand. " +
     "SAFETY: no candidate-facing email can leave unless SYSTEM_MODE=LIVE AND SEND_ENABLED=TRUE; in TEST mode " +
     "every candidate email is rerouted to TEST_RECIPIENT_EMAIL (currently " + testEmail + "). " +
-    "The system is currently in " + mode + " mode."]);
+    "The system is currently in " + mode + " mode. " +
+    "PEOPLE RULES: one person = one record (same person under another role, a nickname, or an Indeed relay email is " +
+    "merged into one row), and anyone on the 'People Registry' tab (employees, former employees, do-not-contact) is " +
+    "never emailed and never placed on the pipeline. " +
+    "This tab rebuilds itself nightly (and whenever the system is updated), so it always describes the live system."]);
 
   // ── Candidate Flow ──────────────────────────────────────────────────────────
   rows.push(['Candidate Flow (status by status)', [
@@ -201,7 +218,10 @@ function buildManualSections_() {
     'REFS_PENDING → REFS_COMPLETE — reference automation in flight / finished.',
     'RECOMMENDED — recommendation engine has produced a final composite recommendation.',
     'OFFER_PENDING — manager chose "Make Offer"; offer prep checklist sent.',
-    'HIRED — manager chose "Mark as Hired".',
+    'HIRED — manager chose "Confirm Hire". The person is added to the People Registry as a Current Employee and is never emailed by the system again. Hired rows move off the Interview Pipeline.',
+    'INTERVIEW_BOOKED — manager chose "Interview Booked (Manual)" or used Quick Add (booked by phone/in person). Protected: no automated emails, never auto-advanced, reminded, or archived.',
+    'REGISTRY_HOLD — the person is on the People Registry (employee / former employee / do-not-contact). Held: no emails, not on the pipeline, listed in the digest.',
+    'Final Recommendation "Awaiting Pre-Screen" — an Indeed applicant who has not filled out the pre-screen form yet (nothing to grade). Reminders + the 30-day cleanup handle them.',
     'MANUAL_REVIEW — parked for the manager to triage via the Manager Decision dropdown.',
     'IN_DRAWER — "Put in the Drawer" (kept warm; hold email after DRAWER_EMAIL_DELAY_DAYS).',
     'REJECTED — gracious decline (delayed REJECTION_EMAIL_DELAY_DAYS, cancellable until it sends).',
@@ -211,6 +231,12 @@ function buildManualSections_() {
   // ── Daily Operations (real menu) ────────────────────────────────────────────
   rows.push(['Daily Operations — the menu', [
     'Everything is driven from the "🛠 Recruiting OS" menu (installed automatically when the spreadsheet opens).',
+    '',
+    'START HERE: when the spreadsheet opens it jumps to the "GM Daily" tab and opens the ⭐ Start Here side panel.',
+    '  • GM Daily top block is a live status board (refreshed every 30 minutes). Green = nothing to click.',
+    '    Red rows name the exact menu item to press; the side panel has a one-click "Fix" button for each.',
+    '  • Menu → ⭐ Start Here → Open Start Here Panel / Refresh Status Now / Fix Missing Applications Now.',
+    '  • Menu → 📞 Quick Add Candidate (booked by phone) — add someone you booked yourself; no emails are sent.',
     '',
     'DAILY ACTIONS (top of menu):',
     '  • Send Me Everything Now — sends the daily digest + upcoming interview worksheets to your inbox.',
@@ -247,7 +273,8 @@ function buildManualSections_() {
     '      (48–72h deadline) → Status REFS_REQUESTED. The rest runs unattended: referees are emailed automatically,',
     '      referee + culture responses are AI graded and folded into the grand total, and a report card is emailed to',
     '      leadership. Pick this only after the live interview transcript has been ingested and graded.   [decision 2]',
-    '  • Confirm Hire → Status HIRED (candidate accepted) → congratulations email + onboarding checklist.   [decision 3 — hire]',
+    '  • Interview Booked (Manual) → you booked the interview yourself → Status INTERVIEW_BOOKED, NO email, pending auto emails cancelled, never auto-archived.',
+    '  • Confirm Hire → Status HIRED (candidate accepted) → added to People Registry as Current Employee (no further candidate emails, including congratulations) + onboarding checklist to you.   [decision 3 — hire]',
     '  • Put in the Drawer → hold email delayed by DRAWER_EMAIL_DELAY_DAYS → Status IN_DRAWER.   [decision 3 — not hire]',
     '',
     '  — ALTERNATE / MANUAL ADVANCE ACTIONS —',
@@ -292,6 +319,33 @@ function buildManualSections_() {
     'verdict is PRODUCTION READY. Only then does it set SYSTEM_MODE=LIVE so real candidate emails can send.'
   ].join('\n')]);
 
+  // ── People Registry + one record per person (52_People) ─────────────────────
+  rows.push(['People Registry — employees, former employees, do-not-contact', [
+    'The "People Registry" tab lists everyone the automation must NEVER treat as a fresh applicant.',
+    'Flag values: Current Employee · Former Employee · Do Not Contact · Cleared to Apply.',
+    '',
+    'Where rows come from:',
+    '  • Payroll workbook (Employee_Master + Employee_Archive) — synced every morning at 5 AM (Source = Payroll).',
+    '  • Confirm Hire — the new hire is added automatically as Current Employee (Source = Confirm Hire).',
+    '  • You — add a row by hand (Source = Manual). Manual rows always win over payroll.',
+    '',
+    'What happens to someone on the registry:',
+    '  • NO candidate email — checked when an email is queued AND again right before it sends (Email Queue shows SUPPRESSED).',
+    '  • Never placed on the Interview Pipeline. If they apply again they are held (Status REGISTRY_HOLD) and listed in',
+    '    the daily digest under "🚫 Held" and on GM Daily.',
+    '  • Matching uses email, phone, and name (nickname-aware: Tony = Anthony, Joey = Joseph; Jr/Sr ignored). Add other',
+    '    spellings in the Aliases column.',
+    '  • To reconsider a former employee: set Flag = "Cleared to Apply".',
+    '',
+    'ONE RECORD PER PERSON: a new application from someone already in All Candidates (any role, nickname, or Indeed relay',
+    'email) updates their existing row and adds the role to "Roles Applied". A nightly merge combines any leftovers; the',
+    'removed copies are kept on the "Merged Duplicates" tab.',
+    '',
+    'BOOKED BY PHONE: Manager Decision "Interview Booked (Manual)" (already in the sheet) or menu → 📞 Quick Add Candidate',
+    '(not in the sheet yet). Either way: no automated emails, never auto-archived; a later form submission is scored for',
+    'information only and never changes their status.'
+  ].join('\n')]);
+
   // ── Tab-by-Tab (data-driven from SHEETS) ────────────────────────────────────
   rows.push(['Tab-by-Tab guide', tabsExplanation_()]);
 
@@ -310,7 +364,15 @@ function buildManualSections_() {
     'Otter transcript not matched → open "Raw Otter Transcript Intake", review Candidate Match Status / Match Method, paste a Candidate ID if needed, re-run Process New Otter Transcripts.',
     'Interview worksheet missing → run Daily Actions → "Generate & Send Upcoming Worksheets"; confirm INTERVIEW_WORKSHEETS_ENABLED=TRUE.',
     'A trigger seems dead → Admin & Setup → "Audit Triggers", then "Install All Triggers"; check the "Trigger Health" tab.',
-    'General system health → Admin & Setup → "Run Health Check" and "Production Readiness Check".'
+    'General system health → Admin & Setup → "Run Health Check" and "Production Readiness Check".',
+    'Someone did not get an email → Email Queue tab: Status SUPPRESSED + Notes explains why (People Registry match, or',
+    '  an automated email blocked because the candidate is Interview Booked (Manual) / Hired).',
+    'An applicant filled out the form but is not in All Candidates → GM Daily shows it in red; click Fix (or wait for the',
+    '  6 AM auto-repair). The fix links Indeed applicants to their existing row by phone/name.',
+    'A former employee should be considered again → People Registry tab → set Flag = "Cleared to Apply". The next daily',
+    '  run releases their held application into the normal flow.',
+    'Duplicate person in All Candidates → nightly merge handles it (originals kept on "Merged Duplicates"). Same name with a',
+    '  different email AND phone is NOT auto-merged — it is listed in the digest as a possible duplicate for you to check.'
   ].join('\n')]);
 
   // ── EEOC / audit posture ────────────────────────────────────────────────────
@@ -365,7 +427,7 @@ function tabsExplanation_() {
   desc[SHEETS.REFERENCE_REQUESTS]    = 'Linked responses where a candidate lists their references (Form Responses 2).';
   desc[SHEETS.REFERENCE_CHECKS]      = 'Linked responses where a referee fills out the reference check (Form Responses 3).';
   desc[SHEETS.SKILLS_TEST_RESPONSES] = 'Linked responses from the Technician skills test (Form Responses 4).';
-  desc[SHEETS.RAW_PRESCREEN]         = 'Linked responses from the Pre-Screen Form — the entry point of all automation (Form Responses 5).';
+  desc[SHEETS.RAW_PRESCREEN]         = 'Original Pre-Screen response tab (Form Responses 5, quiet since 6/22/26). The live form now writes to Form Responses 6 — intake detects it automatically.';
   desc[SHEETS.RAW_OTTER_INTAKE]      = 'Raw interview transcripts delivered by Zapier from Otter; processed into archives + grades.';
   desc[SHEETS.TRANSCRIPT_ARCHIVE]    = 'Permanent archive of matched, graded interview transcripts.';
   desc[SHEETS.EMAIL_QUEUE]           = 'Every candidate email passes through here. Status shows PENDING / SENT / CANCELLED / BLOCKED / FAILED.';
@@ -389,7 +451,11 @@ function tabsExplanation_() {
     var d = desc[name] || '(operational tab — see the relevant module).';
     lines.push(name + ' — ' + d);
   });
-  lines.push(INSTRUCTION_MANUAL_SHEET + ' — this tab (rebuilt by buildInstructionManual()).');
+  lines.push('People Registry — employees, former employees, do-not-contact. Anyone here is never emailed or put on the pipeline.');
+  lines.push('Merged Duplicates — original rows removed when duplicate candidates were merged (nothing is lost).');
+  lines.push('Live Advance Queue — interview links waiting out their 60-minute hold. Set Status = CANCELLED on a PENDING row to stop one.');
+  lines.push('Form Responses 6 — the LIVE Pre-Screen form responses (entry point of all automation).');
+  lines.push(INSTRUCTION_MANUAL_SHEET + ' — this tab (rebuilds itself nightly and whenever the system is updated).');
   lines.push(MANUAL_SETUP_REGISTRY_SHEET + ' — one-time human setup steps with a Status column.');
   return lines.join('\n');
 }

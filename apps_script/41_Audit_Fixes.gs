@@ -218,17 +218,28 @@ function queueBacklogDue_() {
   return n;
 }
 
-/** Count BLOCKED rows currently in the queue (surfaced in the digest). F2 */
+/**
+ * Count BLOCKED rows that are actually recoverable (surfaced in the digest). F2
+ * 9/25/26: duplicate-prevention blocks ("once-only" / same recipient+subject) are
+ * the system working as designed — they are never re-sent, so they no longer
+ * count here or trigger "run Recover Blocked Email Queue" alerts.
+ */
 function queueBlockedCount_() {
   var sh = getSheetOrNull_(SHEETS.EMAIL_QUEUE);
   if (!sh) return 0;
   var hStatus = getColIndex_(sh, 'Status');
   if (!hStatus) return 0;
+  var hErr = getColIndex_(sh, 'Error');
   var last = sh.getLastRow();
   if (last < 2) return 0;
   var vals = sh.getRange(2, hStatus, last - 1, 1).getValues();
+  var errs = hErr ? sh.getRange(2, hErr, last - 1, 1).getValues() : null;
   var n = 0;
-  for (var i = 0; i < vals.length; i++) if (String(vals[i][0]) === 'BLOCKED') n++;
+  for (var i = 0; i < vals.length; i++) {
+    if (String(vals[i][0]) !== 'BLOCKED') continue;
+    if (errs && typeof _isRecoverableBlock_ === 'function' && !_isRecoverableBlock_(errs[i][0])) continue;
+    n++;
+  }
   return n;
 }
 
