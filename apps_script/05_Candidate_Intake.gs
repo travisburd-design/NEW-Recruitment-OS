@@ -37,7 +37,10 @@ function onPreScreenSubmit(e) {
       return null;
     }
     var rowNum = e.range.getRow();
-    return _processPreScreenRow_(rowNum, /*fromTrigger=*/true);
+    // FIX 9/25/26: read from the tab the form ACTUALLY wrote to (the live form
+    // re-linked to 'Form Responses 6'; the old hardcoded tab went quiet 6/22).
+    return _processPreScreenRow_(rowNum, /*fromTrigger=*/true,
+      { sheetName: e.range.getSheet().getName() });
   });
 }
 
@@ -51,19 +54,23 @@ function processPreScreenRow(rowNum) {
 /** Bulk repair: re-process every Pre-Screen row. Dedupe ensures idempotency. */
 function reprocessAllPreScreens() {
   return withLock_(function () {
-    var sh = getSheet_(SHEETS.RAW_PRESCREEN);
-    var last = sh.getLastRow();
-    if (last < 2) return '[INTAKE] no Pre-Screen rows to reprocess';
+    var tabNames = (typeof INTAKE_preScreenTabNames_ === 'function')
+      ? INTAKE_preScreenTabNames_() : [SHEETS.RAW_PRESCREEN];
     var processed = 0, skipped = 0, errors = 0;
+    tabNames.forEach(function (tabName) {
+    var sh = getSheetOrNull_(tabName);
+    if (!sh) return;
+    var last = sh.getLastRow();
     for (var r = 2; r <= last; r++) {
       try {
-        var cid = _processPreScreenRow_(r, false);
+        var cid = _processPreScreenRow_(r, false, { sheetName: tabName });
         if (cid) processed++; else skipped++;
       } catch (e) {
         errors++;
-        logError_('reprocessAllPreScreens:row' + r, e, '', 'ERROR');
+        logError_('reprocessAllPreScreens:' + tabName + ':row' + r, e, '', 'ERROR');
       }
     }
+    });
     var msg = '[INTAKE] reprocessAllPreScreens — processed=' + processed +
               ' skipped=' + skipped + ' errors=' + errors;
     Logger.log(msg);
@@ -75,13 +82,21 @@ function reprocessAllPreScreens() {
 // CORE: process one Pre-Screen response row → upsert candidate → score
 // ─────────────────────────────────────────────────────────────────────────────
 
-function _processPreScreenRow_(rowNum, fromTrigger) {
-  var sh = getSheet_(SHEETS.RAW_PRESCREEN);
+/**
+ * opts (all optional):
+ *   sheetName      — response tab to read (default SHEETS.RAW_PRESCREEN)
+ *   suppressEmails — TRUE = score + write only; no confirmation, booking or
+ *                    decline emails (used when repairing old, dropped rows)
+ */
+function _processPreScreenRow_(rowNum, fromTrigger, opts) {
+  opts = opts || {};
+  var sheetName = opts.sheetName || SHEETS.RAW_PRESCREEN;
+  var sh = getSheet_(sheetName);
   if (rowNum < 2 || rowNum > sh.getLastRow()) {
-    throw new Error('_processPreScreenRow_: invalid row ' + rowNum);
+    throw new Error('_processPreScreenRow_: invalid row ' + rowNum + ' on ' + sheetName);
   }
 
-  var fields = _extractPreScreenFields_(rowNum);
+  var fields = _extractPreScreenFields_(rowNum, sheetName);
   if (!fields.email) {
     logError_('intake:noEmail', 'Pre-Screen row ' + rowNum + ' has no email', '', 'WARN');
     return null;
@@ -95,7 +110,38 @@ function _processPreScreenRow_(rowNum, fromTrigger) {
   var ac = getSheet_(SHEETS.ALL_CANDIDATES);
   var existing = findRowsByColumnValue_(ac, 'Candidate ID', candidateId);
 
-  if (existing.length) {
+  // FIX 9/25/26: an Indeed applicant already exists as a relay-email "shell"
+  // (conversation-xxx@indeedemail.com). When they submit the form with their
+  // real email, ADOPT the shell (same Candidate ID + pipeline row) instead of
+  // creating a second person — otherwise the shell sits at "Insufficient Data".
+  var adoptedShell = false;
+  if (!existing.length && typeof INTAKE_findRelayShell_ === 'function') {
+    var shellCid = INTAKE_findRelayShell_(fields);
+    if (shellCid) {
+      candidateId = shellCid;
+      adoptedShell = true;
+      updateRowWhere_(ac, 'Candidate ID', candidateId, {
+        'Email':          fields.email,
+        'Form Completed': shopDateTime_(),
+        'Status':         STATUS.PRESCREEN_RECEIVED,
+        'Last Updated':   shopDateTime_()
+      });
+      var ipShell = getSheetOrNull_(SHEETS.INTERVIEW_PIPELINE);
+      if (ipShell) updateRowWhere_(ipShell, 'Candidate ID', candidateId, {
+        'Email': fields.email, 'Last Updated': shopDateTime_()
+      });
+      logEvent_('INDEED_SHELL_ADOPTED', candidateId, { realEmail: fields.email, formRow: rowNum, tab: sheetName });
+      if (!opts.suppressEmails && CFG.getBool('SEND_ACKNOWLEDGMENT_EMAIL', true)) {
+        safeRun_('intake:ackEmail', function () {
+          sendTemplatedEmail_('application_confirmation', fields.email, candidateId);
+        });
+      }
+    }
+  }
+
+  if (adoptedShell) {
+    // handled above
+  } else if (existing.length) {
     // Update existing — only refresh Form Completed timestamp + Status
     updateRowWhere_(ac, 'Candidate ID', candidateId, {
       'Form Completed': shopDateTime_(),
@@ -129,15 +175,20 @@ function _processPreScreenRow_(rowNum, fromTrigger) {
     });
 
     // Acknowledgment email (only on first creation)
-    if (CFG.getBool('SEND_ACKNOWLEDGMENT_EMAIL', true)) {
+    if (!opts.suppressEmails && CFG.getBool('SEND_ACKNOWLEDGMENT_EMAIL', true)) {
       safeRun_('intake:ackEmail', function () {
         sendTemplatedEmail_('application_confirmation', fields.email, candidateId);
       });
     }
   }
 
-  // Score (delegates to 06_Scoring_Risk.gs)
-  if (typeof scorePreScreen_ === 'function') {
+  // Score. FIX 9/25/26: use the V2 engine (multi-tab lookup) when present —
+  // V1 scorePreScreen_ only reads the old hardcoded tab and can't find new rows.
+  if (typeof scorePreScreenV2 === 'function') {
+    safeRun_('intake:scoreV2', function () {
+      scorePreScreenV2(candidateId, { suppressEmails: !!opts.suppressEmails });
+    });
+  } else if (typeof scorePreScreen_ === 'function') {
     safeRun_('intake:score', function () { scorePreScreen_(candidateId); });
   } else {
     logError_('intake:scoringMissing', 'scorePreScreen_ not loaded yet — paste 06_Scoring_Risk.gs', candidateId, 'WARN');
@@ -160,8 +211,8 @@ function _processPreScreenRow_(rowNum, fromTrigger) {
  * Header lookups are case-insensitive; duplicate-name headers (the form has
  * two "Email Address" columns) collapse to the first non-empty value.
  */
-function _extractPreScreenFields_(formRow) {
-  var sh = getSheet_(SHEETS.RAW_PRESCREEN);
+function _extractPreScreenFields_(formRow, sheetName) {
+  var sh = getSheet_(sheetName || SHEETS.RAW_PRESCREEN);
   var headers = getHeaderRow_(sh);
   var values = sh.getRange(formRow, 1, 1, headers.length).getValues()[0];
 

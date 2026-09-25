@@ -135,6 +135,10 @@ function onAnyFormSubmit(e) {
     }
     var name = e.range.getSheet().getName();
     if (name === SHEETS.RAW_PRESCREEN         && typeof onPreScreenSubmit          === 'function') return onPreScreenSubmit(e);
+    // FIX 9/25/26: the live Pre-Screen form re-linked to a new tab ('Form Responses 6').
+    // Route ANY tab that looks like a pre-screen response tab, so a re-link can't drop applicants again.
+    if (typeof INTAKE_isPreScreenTab_ === 'function' && INTAKE_isPreScreenTab_(e.range.getSheet())
+        && typeof onPreScreenSubmit === 'function') return onPreScreenSubmit(e);
     if (name === SHEETS.CULTURE_FIT           && typeof onCultureSubmit            === 'function') return onCultureSubmit(e);
     if (name === SHEETS.REFERENCE_REQUESTS    && typeof onCandidateReferenceSubmit === 'function') return onCandidateReferenceSubmit(e);
     if (name === SHEETS.REFERENCE_CHECKS      && typeof onRefereeFormSubmit        === 'function') return onRefereeFormSubmit(e);

@@ -24,6 +24,7 @@
  *     70-84        → "Recommend"
  *     55-69        → "Manual Review"
  *     <55          → "Do Not Recommend"
+ *     no scores    → "Awaiting Pre-Screen" (was "Insufficient Data (0)")
  *   Risk Score ≥ 7 forces "Manual Review" regardless of composite.
  *
  * Public functions:
@@ -82,8 +83,10 @@ function computeFinalRecommendation_(candidateId) {
   var composite = _weightedComposite_(scores);
   var label = _compositeToLabel_(composite, risk, scores);
 
+  // FIX 9/25/26: no scores at all → say what's actually missing, not "(0)".
+  var recText = (composite > 0) ? label + ' (' + Math.round(composite) + ')' : label;
   updateRowWhere_(ip, 'Candidate ID', candidateId, {
-    'Final Recommendation': label + ' (' + Math.round(composite) + ')',
+    'Final Recommendation': recText,
     'Last Updated':         shopDateTime_()
   });
 
@@ -174,7 +177,7 @@ function _compositeToLabel_(composite, risk, scores) {
   else if (composite >= 70) base = 'Recommend';
   else if (composite >= 55) base = 'Manual Review';
   else if (composite > 0)   base = 'Do Not Recommend';
-  else return 'Insufficient Data';
+  else return 'Awaiting Pre-Screen';
 
   // Until an interview happens, a positive label is provisional (pre-screen only).
   if (!interviewPresent && (base === 'Highly Recommend' || base === 'Recommend')) {

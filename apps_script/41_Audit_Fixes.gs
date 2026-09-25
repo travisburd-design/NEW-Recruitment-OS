@@ -434,6 +434,12 @@ function systemSelfAudit_() {
   if (unmatched > 0) issues.push(unmatched + ' transcript(s) UNMATCHED — need a candidate');
   if (skipped > 0)   issues.push(skipped + ' transcript(s) SKIPPED (short/failed) — review');
 
+  // FIX 9/25/26: fail loud if pre-screen submissions are being dropped again.
+  if (typeof INTAKE_countDroppedPreScreens_ === 'function') {
+    var dropped = INTAKE_countDroppedPreScreens_();
+    if (dropped > 0) issues.push(dropped + ' pre-screen submission(s) not in All Candidates (auto-repair runs daily: INTAKE_repairDroppedPreScreens)');
+  }
+
   logEvent_('SYSTEM_SELF_AUDIT', '', { issues: issues.length, detail: issues.join(' | ') });
 
   if (issues.length) {

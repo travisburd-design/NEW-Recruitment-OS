@@ -38,7 +38,8 @@ var RESCORE_MAX_PER_RUN = 20;   // Apps Script 6-min ceiling; ~8-12s per Gemini 
  * Grade, route, write and dispatch for one candidate using the V2 engine.
  * @return {object} { candidateId, score, risk, tier, action, status, reason }
  */
-function scorePreScreenV2(candidateId) {
+function scorePreScreenV2(candidateId, opts) {
+  opts = opts || {};
   if (!candidateId) return { ok: false, error: 'no candidateId' };
   if (!CFG.getBool('GRADING_V2_ENABLED', true)) {
     return (typeof scorePreScreen_ === 'function') ? scorePreScreen_(candidateId) : { ok: false, error: 'V2 disabled' };
@@ -64,6 +65,12 @@ function scorePreScreenV2(candidateId) {
 
   var roleRule = _getRoleRule_(candidate['Role']);
   var routing  = ROUTE_v2_(g.score, g.risk, roleRule, g.gates);
+  // FIX 9/25/26: silent re-scores (old, previously dropped submissions) never
+  // auto-book or email. A would-be auto-book lands in MANUAL_REVIEW instead.
+  if (opts.suppressEmails && routing.status === STATUS.AUTO_BOOK_SENT) {
+    routing = { action: 'MANUAL_REVIEW', status: STATUS.MANUAL_REVIEW,
+                reason: 'Late-graded (submission was dropped) — would have auto-booked: ' + routing.reason };
+  }
   var tier     = TIER_v2_(g.score, roleRule);
 
   // ── Write the grade + everything V1 discarded ──
@@ -109,9 +116,13 @@ function scorePreScreenV2(candidateId) {
   }
 
   // ── Email dispatch (reuses the V1 dispatcher: queue, TEST reroute, once-only) ──
-  safeRun_('v2:dispatch', function () {
-    _dispatchPostScoringEmails_(candidateId, candidate, g.score, g.risk, routing);
-  });
+  if (!opts.suppressEmails) {
+    safeRun_('v2:dispatch', function () {
+      _dispatchPostScoringEmails_(candidateId, candidate, g.score, g.risk, routing);
+    });
+  } else {
+    logEvent_('V2_DISPATCH_SUPPRESSED', candidateId, { score: g.score, action: routing.action });
+  }
 
   // ── Role assessment (scores + logs only; auto-decision stays gated off) ──
   if (routing.status !== STATUS.REJECTED &&
