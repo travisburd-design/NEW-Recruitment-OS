@@ -234,7 +234,8 @@ var _DEDUP_STAGE_RANK = {
   'PRESCREEN_SENT': 2, 'PRESCREEN_RECEIVED': 3, 'SCORED': 3, 'AUTO_BOOK_SENT': 4,
   'PHONE_BOOKED': 5, 'PHONE_DONE': 6, 'FULL_BOOKED': 7, 'FULL_DONE': 8,
   'WORKING_SCHEDULED': 9, 'REFS_REQUESTED': 9, 'REFS_PENDING': 9, 'REFS_COMPLETE': 10, 'RECOMMENDED': 10,
-  'OFFER_PENDING': 11, 'HIRED': 12
+  'OFFER_PENDING': 11, 'HIRED': 12,
+  'INTERVIEW_BOOKED': 7, 'REGISTRY_HOLD': 1   // 52_People (9/25/26)
 };
 
 /** How much usable data a row carries — higher wins the keeper slot. */

@@ -23,6 +23,7 @@ function onOpen() {
       .addItem('⭐ Catch Me Up & Show My Day',              'catchMeUp')
       .addItem('🗂 Set Up Tabs for New Manager',            'organizeTabsForManager')
       .addItem('👤 Process Selected Candidate Now',         'processSelectedCandidateRow')
+      .addItem('📞 Quick Add Candidate (booked by phone)',  'PEOPLE_openQuickAdd')
       // One-click repair: sync the live sheet to the code (columns, config,
       // templates, triggers), backfill scores, recover wrongful auto-rejects,
       // and clean up. Safe to re-run; re-run until no steps are deferred.

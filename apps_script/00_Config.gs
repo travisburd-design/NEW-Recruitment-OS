@@ -148,6 +148,7 @@ var DECISION = Object.freeze({
 var MANAGER_DECISION_ORDER = Object.freeze([
   // Group 1 — core happy-path decisions, in journey order
   'DECISION_ADVANCE_LIVE',
+  'DECISION_INTERVIEW_BOOKED',
   'DECISION_REQUEST_REFERENCES',
   'DECISION_HIRED',
   'DECISION_PUT_IN_DRAWER',
@@ -276,6 +277,7 @@ var CFG_DEFAULTS = Object.freeze({
   // first; the dropdown itself is rendered in that order regardless of row order.
   // Group 1 — the 3 core decision points (happy path, journey order)
   DECISION_ADVANCE_LIVE:                'Advance to Live Interview',
+  DECISION_INTERVIEW_BOOKED:            'Interview Booked (Manual)',
   DECISION_REQUEST_REFERENCES:          'Request References',
   DECISION_HIRED:                       'Confirm Hire',
   DECISION_PUT_IN_DRAWER:               'Put in the Drawer',

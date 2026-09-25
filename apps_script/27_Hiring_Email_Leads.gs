@@ -359,6 +359,30 @@ function processHiringEmailLeads() {
         var cid = res.cid;
         var createdNew = false;
 
+        // PEOPLE (52_People): one record per person + registry hold + protected statuses.
+        var _nparts = name.split(/\s+/);
+        var _who = { email: email, phone: phone, firstName: _nparts[0] || '', lastName: _nparts.slice(1).join(' ') };
+        if (!cid && typeof PEOPLE_findPerson_ === 'function') cid = PEOPLE_findPerson_(_who);
+        if (typeof PEOPLE_registryMatch_ === 'function') {
+          var _rec = PEOPLE_registryMatch_(_who);
+          if (_rec) {
+            if (cid) PEOPLE_holdCandidate_(cid, _rec, role); else PEOPLE_touchRegistry_(_rec, role);
+            logEvent_('PEOPLE_REGISTRY_HOLD', cid || '', { person: _rec.name, flag: _rec.flag, via: 'lead import' });
+            _setLeadStatus_(sh, rowNum, idx, cid || '', 'HELD — REGISTRY', '', 'On People Registry as ' + _rec.flag + ' — no invite sent');
+            summary.skipped++;
+            continue;
+          }
+        }
+        if (cid && typeof PEOPLE_isProtectedStatus_ === 'function') {
+          var _c0 = _getCandidateRow_(cid) || {};
+          if (PEOPLE_isProtectedStatus_(_c0['Status'])) {
+            if (typeof PEOPLE_addRoleApplied_ === 'function') PEOPLE_addRoleApplied_(cid, role);
+            _setLeadStatus_(sh, rowNum, idx, cid, 'ALREADY IN PROCESS', '', 'Candidate status ' + _c0['Status'] + ' — no invite sent');
+            summary.skipped++;
+            continue;
+          }
+        }
+
         if (cid) {
           var cand = _getCandidateRow_(cid) || {};
           if (_hasCompletedPreScreen_(cand)) {

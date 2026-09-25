@@ -49,6 +49,19 @@ function scorePreScreenV2(candidateId, opts) {
   var candidate = _getCandidateRow_(candidateId);
   if (!candidate) return { ok: false, error: 'candidate not found' };
 
+  // PEOPLE GATE (52_People): registry people are held, not scored/routed/emailed.
+  if (typeof PEOPLE_registryMatchForCandidate_ === 'function') {
+    var _rec = PEOPLE_registryMatchForCandidate_(candidate);
+    if (_rec) {
+      PEOPLE_holdCandidate_(candidateId, _rec, candidate['Role']);
+      return { candidateId: candidateId, score: null, action: 'REGISTRY_HOLD', reason: _rec.flag };
+    }
+  }
+  // A candidate the manager is already handling (Interview Booked, Full Booked,
+  // Offer, Hired…) is scored for information only — status, pipeline and emails untouched.
+  var _protected = (typeof PEOPLE_isProtectedStatus_ === 'function') && PEOPLE_isProtectedStatus_(candidate['Status']);
+  if (_protected) opts.suppressEmails = true;
+
   var g = GRADE_prescreenV2_(candidateId);
 
   // ── Could not grade → MANUAL_REVIEW. Never reject on a failed grade. ──
@@ -93,6 +106,7 @@ function scorePreScreenV2(candidateId, opts) {
   updates['Confidence']            = g.ai.confidence_level;
   updates['Recommended Next Step'] = g.ai.recommended_next_step;
 
+  if (_protected) { delete updates['Status']; delete updates['Notes']; }
   updateRowWhere_(ac, 'Candidate ID', candidateId, updates);
   GRADE_writeDetail_(candidateId, candidate, g);
 
@@ -102,7 +116,11 @@ function scorePreScreenV2(candidateId, opts) {
   });
 
   // ── Pipeline row for anything still live ──
-  if (routing.status !== STATUS.REJECTED && !CFG.getBool('HIRING_PAUSE_MODE', false)) {
+  if (_protected) {
+    var _ipP = getSheetOrNull_(SHEETS.INTERVIEW_PIPELINE);
+    if (_ipP) updateRowWhere_(_ipP, 'Candidate ID', candidateId, {
+      'Score': g.score, 'Pre-Screen Score': g.score, 'Risk Score': g.risk, 'Last Updated': shopDateTime_() });
+  } else if (routing.status !== STATUS.REJECTED && !CFG.getBool('HIRING_PAUSE_MODE', false)) {
     safeRun_('v2:pipelineRow', function () {
       _ensureInterviewPipelineRow_(candidateId, {
         status: routing.status, stage: 'Pre-screen scored (V2)', via: 'scoring_v2'

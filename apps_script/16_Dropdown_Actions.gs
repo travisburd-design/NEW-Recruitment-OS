@@ -135,6 +135,7 @@ function _dispatchPipelineDecision_(candidateId, decisionValue, candidate, rowNu
     case 'ARCHIVE':         return _dispatchArchive_(candidateId, candidate);
     case 'REOPEN':          return _dispatchReopen_(candidateId, candidate);
     case 'HIRED':           return _dispatchHired_(candidateId, candidate);
+    case 'INTERVIEW_BOOKED': return PEOPLE_dispatchInterviewBooked_(candidateId, candidate);
   }
   return null;
 }
@@ -156,6 +157,7 @@ function _decisionToAction_(value) {
   if (s === CFG.get('DECISION_ARCHIVE'))         return 'ARCHIVE';
   if (s === CFG.get('DECISION_REOPEN'))          return 'REOPEN';
   if (s === CFG.get('DECISION_HIRED'))           return 'HIRED';
+  if (s === CFG.get('DECISION_INTERVIEW_BOOKED', 'Interview Booked (Manual)')) return 'INTERVIEW_BOOKED';
   return null;
 }
 
@@ -326,9 +328,14 @@ function _dispatchReopen_(candidateId, candidate) {
 }
 
 function _dispatchHired_(candidateId, candidate) {
+  // 9/25/26: a hire goes onto the People Registry FIRST (Current Employee), which
+  // blocks every candidate email to them from here on — including congratulations.
+  if (typeof PEOPLE_registerHire_ === 'function') {
+    safeRun_('_dispatchHired_:registry', function () { PEOPLE_registerHire_(candidateId, candidate); });
+  }
   // Set status HIRED on both sheets
   _setBothStatuses_(candidateId, STATUS.HIRED,
-    'Hired — congratulations email sent: ' + shopDateTime_());
+    'Hired — added to People Registry (no further candidate emails): ' + shopDateTime_());
 
   // Send congratulations to the candidate
   if (CFG.getBool('HIRED_CONGRATULATIONS_EMAIL_ENABLED', true)) {
@@ -348,7 +355,7 @@ function _dispatchHired_(candidateId, candidate) {
         to:          CFG.get('HIRING_MANAGER_EMAIL'),
         subject:     'HIRED — ' + name + (role ? ' (' + role + ')' : '') + ' — onboarding checklist',
         body:
-'Congratulations email has been sent to ' + name + '.\n\n' +
+name + ' is now on the People Registry as a Current Employee — the Recruiting OS will not email them again.\n\n' +
 'ONBOARDING CHECKLIST:\n' +
 '  [ ] Confirm start date and first-day schedule\n' +
 '  [ ] Set up payroll and direct deposit\n' +
@@ -372,8 +379,8 @@ function _dispatchHired_(candidateId, candidate) {
   }
 
   logEvent_('CANDIDATE_HIRED', candidateId, { role: candidate['Role'] || '' });
-  toast_(candidate['First Name'] || 'Candidate' + ' marked as hired — congratulations email sent.', 'Recruiting OS', 6);
-  return { action: 'HIRED', emailQueued: true };
+  toast_((candidate['First Name'] || 'Candidate') + ' marked as hired — added to People Registry, no emails.', 'Recruiting OS', 6);
+  return { action: 'HIRED', emailQueued: false };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

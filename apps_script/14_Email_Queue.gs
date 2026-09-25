@@ -75,6 +75,14 @@ function queueEmail_(opts) {
   if (!opts.subject) throw new Error('queueEmail_: opts.subject is required');
   if (!opts.body)    throw new Error('queueEmail_: opts.body is required');
 
+  // PEOPLE GATE (52_People): never email employees / former employees / do-not-contact,
+  // and never send AUTOMATED emails to a candidate the manager is handling manually.
+  if (typeof PEOPLE_emailSuppressReason_ === 'function') {
+    var _why = '';
+    try { _why = PEOPLE_emailSuppressReason_(opts); } catch (e) { logError_('queueEmail_:peopleGate', e, opts.candidateId || '', 'WARN'); }
+    if (_why) return PEOPLE_logSuppressed_(opts, _why);
+  }
+
   var sh = getSheet_(SHEETS.EMAIL_QUEUE);
   var queueId = 'Q-' + Utilities.getUuid().substring(0, 8).toUpperCase();
   var now = new Date();
@@ -311,6 +319,22 @@ function _sendQueueRow_(queueId) {
   if (dupeReason) {
     _markBlocked_(rowNum, dupeReason);
     return 'BLOCKED';
+  }
+
+  // Gate (f) — PEOPLE registry / manual-interview protection re-checked at SEND
+  // time (the person may have been hired or flagged after this row was queued).
+  if (typeof PEOPLE_emailSuppressReason_ === 'function') {
+    var _pwhy = '';
+    try {
+      _pwhy = PEOPLE_emailSuppressReason_({ to: intended, templateKey: row['Template Key'],
+                                            candidateId: row['Candidate ID'] });
+    } catch (e) { _pwhy = ''; }
+    if (_pwhy) {
+      sh.getRange(rowNum, getColIndex_(sh, 'Status')).setValue('SUPPRESSED');
+      sh.getRange(rowNum, getColIndex_(sh, 'Notes')).setValue(_pwhy);
+      logEvent_('EMAIL_SUPPRESSED', row['Candidate ID'] || '', { queueId: queueId, reason: _pwhy });
+      return 'SUPPRESSED';
+    }
   }
 
   // ────────── ALL GATES PASSED — send ──────────

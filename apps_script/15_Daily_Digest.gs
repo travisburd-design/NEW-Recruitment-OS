@@ -194,6 +194,7 @@ function buildDigestHtml_() {
     return head +
       section('KPIs', kpiHtml) +
       section('🟡 Needs your decision', actionItemsTable(action)) +
+      (typeof PEOPLE_digestSection_ === 'function' ? PEOPLE_digestSection_(section, table) : '') +
       section('📅 Today’s interviews & worksheets', table(
         ['Candidate', 'Role', 'Interview Type', 'Time', 'Worksheet Email'],
         todayIv.map(function (t) { return [t.name, t.role, t.type, t.time, t.emailStatus]; })

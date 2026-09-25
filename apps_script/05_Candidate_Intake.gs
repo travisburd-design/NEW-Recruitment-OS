@@ -110,6 +110,42 @@ function _processPreScreenRow_(rowNum, fromTrigger, opts) {
   var ac = getSheet_(SHEETS.ALL_CANDIDATES);
   var existing = findRowsByColumnValue_(ac, 'Candidate ID', candidateId);
 
+  // PEOPLE (52_People, 9/25/26): ONE record per person. Same person under another
+  // role, a nickname, or an Indeed relay address → reuse their existing record.
+  var personMatched = false;
+  if (!existing.length && typeof PEOPLE_findPerson_ === 'function') {
+    var _pc = PEOPLE_findPerson_(fields);
+    if (_pc) {
+      candidateId = _pc;
+      existing = findRowsByColumnValue_(ac, 'Candidate ID', _pc);
+      personMatched = existing.length > 0;
+    }
+  }
+
+  // PEOPLE REGISTRY: employees / former employees / do-not-contact are held —
+  // recorded, never emailed, never put on the pipeline, flagged in the digest.
+  if (typeof PEOPLE_registryMatch_ === 'function') {
+    var _rec = PEOPLE_registryMatch_(fields);
+    var _prevSt = existing.length ? String(existing[0].data['Status'] || '').toUpperCase() : '';
+    if (_rec && !(typeof PEOPLE_isProtectedStatus_ === 'function' && PEOPLE_isProtectedStatus_(_prevSt) && _prevSt !== 'REGISTRY_HOLD')) {
+      if (!existing.length) {
+        appendRowByHeader_(ac, {
+          'Date Received': shopDateTime_(), 'Role': fields.role, 'First Name': fields.firstName,
+          'Last Name': fields.lastName, 'Email': fields.email, 'Phone': fields.phone, 'Source': fields.source,
+          'Resume Link': fields.resume, 'Form Completed': shopDateTime_(), 'Status': 'REGISTRY_HOLD',
+          'Candidate ID': candidateId, 'Roles Applied': fields.role, 'Last Updated': shopDateTime_()
+        });
+      } else if (typeof PEOPLE_addRoleApplied_ === 'function') {
+        PEOPLE_addRoleApplied_(candidateId, fields.role);
+      }
+      PEOPLE_holdCandidate_(candidateId, _rec, fields.role);
+      return candidateId;
+    }
+  }
+  var _protectedNow = existing.length && typeof PEOPLE_isProtectedStatus_ === 'function' &&
+                      PEOPLE_isProtectedStatus_(existing[0].data['Status']);
+  if (_protectedNow) opts.suppressEmails = true;
+
   // FIX 9/25/26: an Indeed applicant already exists as a relay-email "shell"
   // (conversation-xxx@indeedemail.com). When they submit the form with their
   // real email, ADOPT the shell (same Candidate ID + pipeline row) instead of
@@ -142,13 +178,27 @@ function _processPreScreenRow_(rowNum, fromTrigger, opts) {
   if (adoptedShell) {
     // handled above
   } else if (existing.length) {
-    // Update existing — only refresh Form Completed timestamp + Status
-    updateRowWhere_(ac, 'Candidate ID', candidateId, {
-      'Form Completed': shopDateTime_(),
-      'Status':         STATUS.PRESCREEN_RECEIVED,
-      'Last Updated':   shopDateTime_()
-    });
-    logEvent_('CANDIDATE_RESUBMIT', candidateId, { formRow: rowNum, role: fields.role });
+    // Update existing — refresh Form Completed; status only if still in the automated stage.
+    var _ex = existing[0].data;
+    var _upd = { 'Form Completed': shopDateTime_(), 'Last Updated': shopDateTime_() };
+    if (!_protectedNow) _upd['Status'] = STATUS.PRESCREEN_RECEIVED;
+    var _wasRelay = !String(_ex['Email'] || '').trim() || /indeedemail\.com$|^conversation-/i.test(String(_ex['Email'] || ''));
+    if (_wasRelay && fields.email) _upd['Email'] = fields.email;
+    if (!String(_ex['Phone'] || '').trim() && fields.phone) _upd['Phone'] = fields.phone;
+    updateRowWhere_(ac, 'Candidate ID', candidateId, _upd);
+    if (_wasRelay && fields.email) {
+      var _ipR = getSheetOrNull_(SHEETS.INTERVIEW_PIPELINE);
+      if (_ipR) updateRowWhere_(_ipR, 'Candidate ID', candidateId, { 'Email': fields.email, 'Last Updated': shopDateTime_() });
+    }
+    if (typeof PEOPLE_addRoleApplied_ === 'function') PEOPLE_addRoleApplied_(candidateId, fields.role, { setRole: !_protectedNow });
+    logEvent_(personMatched ? 'CANDIDATE_SAME_PERSON' : 'CANDIDATE_RESUBMIT', candidateId,
+      { formRow: rowNum, role: fields.role, protectedStatus: !!_protectedNow });
+    // First real contact from a relay-only Indeed shell → confirmation email (unless suppressed).
+    if (_wasRelay && fields.email && !opts.suppressEmails && CFG.getBool('SEND_ACKNOWLEDGMENT_EMAIL', true)) {
+      safeRun_('intake:ackEmail', function () {
+        sendTemplatedEmail_('application_confirmation', fields.email, candidateId);
+      });
+    }
   } else {
     // Create new
     var hm = _getActiveHiringManager_();
@@ -166,6 +216,7 @@ function _processPreScreenRow_(rowNum, fromTrigger, opts) {
       'Status':           STATUS.PRESCREEN_RECEIVED,
       'Notes':            truncate_(fields.notes, 500),
       'Candidate ID':     candidateId,
+      'Roles Applied':    fields.role,
       'Hiring Manager':   hm ? hm['Hiring Manager Name'] : CFG.get('HIRING_MANAGER_NAME'),
       'Last Updated':     shopDateTime_()
     });

@@ -113,6 +113,11 @@ function _ensureInterviewPipelineRow_(candidateId, opts) {
   if (findRowsByColumnValue_(ip, 'Candidate ID', candidateId).length) return false;
   var c = _getCandidateRow_(candidateId);
   if (!c) return false;
+  // PEOPLE GATE (52_People): employees / former employees never land on the pipeline.
+  if (typeof PEOPLE_registryMatchForCandidate_ === 'function' && !opts.bypassRegistry) {
+    var _rec = PEOPLE_registryMatchForCandidate_(c);
+    if (_rec) { PEOPLE_holdCandidate_(candidateId, _rec, c['Role']); return false; }
+  }
 
   var presScore = c['Total Score'] || c['AI Score'] || '';
   appendRowByHeader_(ip, {

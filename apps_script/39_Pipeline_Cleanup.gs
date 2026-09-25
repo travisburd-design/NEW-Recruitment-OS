@@ -35,7 +35,7 @@
 // across files — STATUS (00_Config.gs) may be undefined when this file's
 // globals evaluate. Reading it lazily inside a call is always safe.
 function _pipelineSweepStatuses_() {
-  return [STATUS.REJECTED, STATUS.ARCHIVED, STATUS.IN_DRAWER];
+  return [STATUS.REJECTED, STATUS.ARCHIVED, STATUS.IN_DRAWER, STATUS.HIRED, 'REGISTRY_HOLD'];
 }
 
 // Extra columns the archive carries on top of the full pipeline row.
