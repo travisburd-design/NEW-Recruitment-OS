@@ -31,21 +31,68 @@
  *   WEBAPP_getQueue(filter)           — client → ranked candidate list
  *   WEBAPP_decide(candidateId, code)  — client → one-click decision
  *   WEBAPP_url()                      — logs the deployed URL
+ *   WEBAPP_openInSheet()              — opens the console as a near-full-screen dialog
+ *   CONSOLE_V2_SETUP_RUN_ONCE()       — installs the 9/26/26 additions (run once)
  *   WEBAPP_selfTest()
+ *
+ * 9/26/26 — CONSOLE V2
+ *   • Every Manager Decision dropdown option is a button on each card, labelled
+ *     with the exact Config text, so the console and the sheet always match.
+ *   • New decision "Request Pre-Screen (Required)" (prescreen_required email).
+ *   • Tabs: Needs decision · Waiting on pre-screen · In progress · Closed (reopen) · All active.
+ *   • Reject asks for the Rejection Reason inline; Reject / Archive / Hire / Offer
+ *     need a second click to confirm.
+ *   • Dialog sizes itself to the screen, leaving a margin to navigate.
+ *   • Fixed "undefined" score / risk / phone chips (google.script.run drops nulls).
  */
 
 var WEBAPP_TITLE = "Frank's Hiring Console";
 
 // Decisions the console can take, mapped to the Config decision labels the
 // existing dropdown dispatcher understands.
+// Every Manager Decision dropdown option, in the same order the dropdown shows.
+// `confirm` = needs a second click in the console.
 var WEBAPP_ACTIONS = Object.freeze({
-  ADVANCE_PHONE: 'DECISION_ADVANCE_PHONE',
-  ADVANCE_LIVE:  'DECISION_ADVANCE_LIVE',
-  REQUEST_REFS:  'DECISION_REQUEST_REFERENCES',
-  DRAWER:        'DECISION_PUT_IN_DRAWER',
-  REJECT:        'DECISION_REJECT',
-  HIRED:         'DECISION_HIRED'
+  ADVANCE_LIVE:      'DECISION_ADVANCE_LIVE',
+  INTERVIEW_BOOKED:  'DECISION_INTERVIEW_BOOKED',
+  REQUEST_REFS:      'DECISION_REQUEST_REFERENCES',
+  HIRED:             'DECISION_HIRED',
+  DRAWER:            'DECISION_PUT_IN_DRAWER',
+  REQUEST_PRESCREEN: 'DECISION_REQUEST_PRESCREEN',
+  ADVANCE_PHONE:     'DECISION_ADVANCE_PHONE',
+  ADVANCE_WORKING:   'DECISION_ADVANCE_WORKING',
+  MAKE_OFFER:        'DECISION_MAKE_OFFER',
+  NEEDS_INFO:        'DECISION_NEEDS_INFO',
+  REJECT:            'DECISION_REJECT',
+  REOPEN:            'DECISION_REOPEN',
+  ARCHIVE:           'DECISION_ARCHIVE'
 });
+var WEBAPP_ACTION_DEFAULT_LABELS = Object.freeze({
+  DECISION_INTERVIEW_BOOKED:  'Interview Booked (Manual)',
+  DECISION_REQUEST_PRESCREEN: 'Request Pre-Screen (Required)'
+});
+var WEBAPP_CONFIRM_ACTIONS = { REJECT: 1, ARCHIVE: 1, HIRED: 1, MAKE_OFFER: 1 };
+
+/** Button list for the client: [{code,label,confirm}] in dropdown order. */
+function WEBAPP_actionList_() {
+  return Object.keys(WEBAPP_ACTIONS).map(function (code) {
+    var key = WEBAPP_ACTIONS[code];
+    return { code: code, label: CFG.get(key, WEBAPP_ACTION_DEFAULT_LABELS[key] || '') || '',
+             confirm: !!WEBAPP_CONFIRM_ACTIONS[code] };
+  }).filter(function (a) { return a.label; });
+}
+
+function WEBAPP_rejectionReasons_() {
+  return String(CFG.get('REJECTION_REASONS') || '').split(',')
+    .map(function (x) { return x.trim(); }).filter(Boolean);
+}
+
+function WEBAPP_fmtDate_(v) {
+  if (!v) return '';
+  var d = (v instanceof Date) ? v : new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+  return Utilities.formatDate(d, CFG.get('SHOP_TIMEZONE', 'America/Los_Angeles'), 'EEE M/d');
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY
@@ -135,10 +182,15 @@ function WEBAPP_getQueue(filter) {
   var detail = WEBAPP_gradeDetailIndex_();
   var pipeline = WEBAPP_pipelineIndex_();
 
-  var DECIDE = { 'MANUAL_REVIEW': 1, 'PHONE_DONE': 1, 'FULL_DONE': 1, 'NEW': 1, 'PRESCREEN_SENT': 1 };
-  var HIDE   = { 'ARCHIVED': 1, 'REJECTED': 1, 'HIRED': 1, 'WITHDRAWN': 1, 'IN_DRAWER': 1 };
+  // 9/26/26: applicants who never completed the pre-screen are NOT "needs decision"
+  // — applying on Indeed does not put someone in consideration; the pre-screen does.
+  var DECIDE    = { 'MANUAL_REVIEW': 1, 'PHONE_DONE': 1, 'FULL_DONE': 1, 'NEW': 1, 'SCORED': 1,
+                    'PRESCREEN_RECEIVED': 1, 'REFS_COMPLETE': 1, 'RECOMMENDED': 1 };
+  var PRESCREEN = { 'PRESCREEN_SENT': 1 };
+  var CLOSED    = { 'ARCHIVED': 1, 'REJECTED': 1, 'IN_DRAWER': 1 };
+  var HIDE      = { 'ARCHIVED': 1, 'REJECTED': 1, 'HIRED': 1, 'WITHDRAWN': 1, 'IN_DRAWER': 1, 'REGISTRY_HOLD': 1 };
 
-  var out = [], counts = { decide: 0, booked: 0, other: 0 };
+  var out = [], counts = { decide: 0, prescreen: 0, booked: 0, closed: 0, other: 0 };
   var wantRole = String(filter.role || '').toLowerCase();
   var bucket = String(filter.bucket || 'decide');
 
@@ -149,11 +201,16 @@ function WEBAPP_getQueue(filter) {
     var role = cRole >= 0 ? String(r[cRole] || '') : '';
 
     if (DECIDE[status]) counts.decide++;
+    else if (PRESCREEN[status]) counts.prescreen++;
+    else if (CLOSED[status]) counts.closed++;
     else if (!HIDE[status]) counts.booked++;
     else counts.other++;
 
+    if (bucket === '__counts__') return;   // tab badges only
     if (bucket === 'decide' && !DECIDE[status]) return;
-    if (bucket === 'booked' && (DECIDE[status] || HIDE[status])) return;
+    if (bucket === 'prescreen' && !PRESCREEN[status]) return;
+    if (bucket === 'booked' && (DECIDE[status] || PRESCREEN[status] || HIDE[status])) return;
+    if (bucket === 'closed' && !CLOSED[status]) return;
     if (bucket === 'all' && HIDE[status]) return;
     if (wantRole && role.toLowerCase().indexOf(wantRole) === -1) return;
 
@@ -182,7 +239,7 @@ function WEBAPP_getQueue(filter) {
       resume: cResume >= 0 ? String(r[cResume] || '') : '',
       email: cEmail >= 0 ? String(r[cEmail] || '') : '',
       phone: cPhone >= 0 ? String(r[cPhone] || '') : '',
-      received: cDate >= 0 ? String(r[cDate] || '') : ''
+      received: cDate >= 0 ? WEBAPP_fmtDate_(r[cDate]) : ''
     });
   });
 
@@ -197,7 +254,9 @@ function WEBAPP_getQueue(filter) {
   return {
     ok: true, viewer: viewer, mode: CFG.get('SYSTEM_MODE', 'TEST'),
     counts: counts, candidates: out,
-    roles: WEBAPP_roleList_()
+    roles: WEBAPP_roleList_(),
+    actions: WEBAPP_actionList_(),
+    rejectionReasons: WEBAPP_rejectionReasons_()
   };
 }
 
@@ -276,16 +335,18 @@ function WEBAPP_pipelineIndex_() {
  * console and the sheet behave identically.
  * @param {string} candidateId
  * @param {string} actionCode  key of WEBAPP_ACTIONS
+ * @param {object=} opts       { reason: Rejection Reason (REJECT only) }
  * @return {object} { ok, message }
  */
-function WEBAPP_decide(candidateId, actionCode) {
+function WEBAPP_decide(candidateId, actionCode, opts) {
+  opts = opts || {};
   var viewer = WEBAPP_viewerEmail_();
   if (!WEBAPP_isAuthorized_(viewer)) return { ok: false, message: 'Not authorised' };
   if (!candidateId) return { ok: false, message: 'No candidate' };
 
   var cfgKey = WEBAPP_ACTIONS[actionCode];
   if (!cfgKey) return { ok: false, message: 'Unknown action: ' + actionCode };
-  var label = CFG.get(cfgKey);
+  var label = CFG.get(cfgKey, WEBAPP_ACTION_DEFAULT_LABELS[cfgKey] || '');
   if (!label) return { ok: false, message: 'Config key ' + cfgKey + ' is empty' };
 
   return withLock_(function () {
@@ -307,6 +368,14 @@ function WEBAPP_decide(candidateId, actionCode) {
       if (hits.length) { candidate = hits[0].data; rowNum = hits[0].rowNum; }
     }
 
+    // Reject: record the reason on the pipeline row first — the dispatcher reads it.
+    if (actionCode === 'REJECT' && opts.reason) {
+      candidate['Rejection Reason'] = String(opts.reason);
+      if (ip && rowNum) safeRun_('webapp:rejectReason', function () {
+        updateRowWhere_(ip, 'Candidate ID', candidateId, { 'Rejection Reason': String(opts.reason) });
+      });
+    }
+
     var before = String(candidate['Status'] || '');
     var result;
     try {
@@ -325,7 +394,11 @@ function WEBAPP_decide(candidateId, actionCode) {
     });
     logEvent_('WEBAPP_DECISION', candidateId, { action: actionCode, label: label, viewer: viewer });
 
-    return { ok: true, message: label + ' applied', action: actionCode, result: result || {} };
+    if (!result) return { ok: false, message: '"' + label + '" was not recognised by the dispatcher — nothing changed' };
+    var msg = label + ' applied';
+    if (result.archived) msg += ' — moved off the pipeline';
+    if (result.emailQueued === false && result.reason) msg += ' (no email: ' + result.reason + ')';
+    return { ok: true, message: msg, action: actionCode, result: result };
   });
 }
 
@@ -370,7 +443,7 @@ function WEBAPP_selfTest() {
   }
   out.push('  ─ roles           : ' + WEBAPP_roleList_().join(', '));
   Object.keys(WEBAPP_ACTIONS).forEach(function (k) {
-    var lbl = CFG.get(WEBAPP_ACTIONS[k]);
+    var lbl = CFG.get(WEBAPP_ACTIONS[k], WEBAPP_ACTION_DEFAULT_LABELS[WEBAPP_ACTIONS[k]] || '');
     out.push('  ' + (lbl ? '✓' : '✗') + ' action ' + k + ' → "' + lbl + '"');
   });
   var url = ''; try { url = ScriptApp.getService().getUrl() || ''; } catch (e) {}
@@ -378,7 +451,11 @@ function WEBAPP_selfTest() {
   out.push('[WEBAPP] selfTest done.');
   var msg = out.join('\n'); Logger.log(msg); return msg;
 }
-/** Open the Hiring Console as a dialog inside the spreadsheet — no deployment needed. */
+/**
+ * Open the Hiring Console as a dialog inside the spreadsheet — no deployment needed.
+ * Step 1 shows a tiny launcher that measures the screen; step 2 (WEBAPP_openSized)
+ * re-opens the console at nearly full size with a margin left around the edges.
+ */
 function WEBAPP_openInSheet() {
   var ui = SpreadsheetApp.getUi();
   var email = WEBAPP_viewerEmail_();
@@ -388,9 +465,77 @@ function WEBAPP_openInSheet() {
       ui.ButtonSet.OK);
     return;
   }
+  var launcher = HtmlService.createHtmlOutput(
+    '<div style="font:14px system-ui;padding:18px;color:#333">Opening Hiring Console…</div>' +
+    '<script>' +
+    'var w=(window.screen&&screen.availWidth)||1400,h=(window.screen&&screen.availHeight)||900;' +
+    'google.script.run.withFailureHandler(function(e){document.body.textContent="Could not open: "+e.message;})' +
+    '.WEBAPP_openSized(w,h);' +
+    '</script>').setWidth(260).setHeight(70);
+  ui.showModalDialog(launcher, "Frank's Hiring Console");
+}
+
+/**
+ * Called by the launcher with the screen size. Leaves ~40px each side and room
+ * for the browser toolbar + dialog title bar so you can still reach the sheet.
+ */
+function WEBAPP_openSized(screenW, screenH) {
+  var w = Math.round(Number(screenW) || 1400) - 90;
+  var h = Math.round(Number(screenH) || 900) - 250;
+  w = Math.max(900, Math.min(w, 2400));
+  h = Math.max(560, Math.min(h, 1400));
   var t = HtmlService.createTemplateFromFile('47_WebApp_UI');
-  t.viewerEmail = email;
+  t.viewerEmail = WEBAPP_viewerEmail_();
   t.shopName    = CFG.get('SHOP_NAME', "Frank's European Service");
   t.systemMode  = CFG.get('SYSTEM_MODE', 'TEST');
-  ui.showModalDialog(t.evaluate().setWidth(1100).setHeight(720), "Frank's Hiring Console");
+  SpreadsheetApp.getUi().showModalDialog(t.evaluate().setWidth(w).setHeight(h), "Frank's Hiring Console");
+}
+
+/**
+ * RUN ONCE after pulling the 9/26/26 files. Idempotent — safe to re-run.
+ *   • adds Config DECISION_REQUEST_PRESCREEN + PIPELINE_ARCHIVE_ON_DECISION
+ *   • installs the prescreen_required email template (adds it; leaves others alone)
+ *   • refreshes the Manager Decision dropdown on Interview Pipeline + Pipeline Archive
+ *   • moves any already-closed rows (Rejected / Archived / Drawer / Hired) off the pipeline now
+ */
+function CONSOLE_V2_SETUP_RUN_ONCE() {
+  var out = ['[CONSOLE V2] setup'];
+  if (!CFG.has('DECISION_REQUEST_PRESCREEN')) { CFG.set('DECISION_REQUEST_PRESCREEN', 'Request Pre-Screen (Required)'); out.push('✓ added DECISION_REQUEST_PRESCREEN'); }
+  else out.push('─ DECISION_REQUEST_PRESCREEN already set: "' + CFG.get('DECISION_REQUEST_PRESCREEN') + '"');
+  if (!CFG.has('DECISION_INTERVIEW_BOOKED')) { CFG.set('DECISION_INTERVIEW_BOOKED', 'Interview Booked (Manual)'); out.push('✓ added DECISION_INTERVIEW_BOOKED'); }
+  if (!CFG.has('PIPELINE_ARCHIVE_ON_DECISION')) { CFG.set('PIPELINE_ARCHIVE_ON_DECISION', 'TRUE'); out.push('✓ added PIPELINE_ARCHIVE_ON_DECISION=TRUE'); }
+  CFG.reset();
+
+  // Add the new template only — do not overwrite edited wording on the others.
+  var tSh = getSheet_(SHEETS.EMAIL_TEMPLATES);
+  var seed = SEED_EMAIL_TEMPLATES.filter(function (r) { return r['Template Key'] === 'prescreen_required'; })[0];
+  if (!seed) out.push('✗ prescreen_required missing from 03_Seed_Templates.gs — pull that file');
+  else if (findRowsByColumnValue_(tSh, 'Template Key', 'prescreen_required').length) out.push('─ prescreen_required template already present');
+  else { appendRowByHeader_(tSh, seed); out.push('✓ added prescreen_required email template'); }
+
+  var n = _applyManagerDecisionDropdown_();
+  out.push((n ? '✓' : '✗') + ' Manager Decision dropdown refreshed on Interview Pipeline');
+  var arch = getSheetOrNull_(SHEETS.PIPELINE_ARCHIVE);
+  if (arch && getColIndex_(arch, 'Manager Decision')) {
+    _applyListValidation_(arch, 'Manager Decision', [CFG.get('DECISION_REOPEN', 'Reopen Candidate')]);
+    out.push('✓ Pipeline Archive: pick "' + CFG.get('DECISION_REOPEN', 'Reopen Candidate') + '" in Manager Decision to bring someone back');
+  }
+
+  // One-time cleanup of rows already closed out (ignores the cancellable hold).
+  var ip = getSheetOrNull_(SHEETS.INTERVIEW_PIPELINE), moved = 0;
+  if (ip && ip.getLastRow() >= 2) {
+    var H = getHeaderRow_(ip), cS = H.indexOf('Status'), cI = H.indexOf('Candidate ID');
+    var closed = { REJECTED: 1, ARCHIVED: 1, IN_DRAWER: 1, HIRED: 1, REGISTRY_HOLD: 1 };
+    var ids = ip.getRange(2, 1, ip.getLastRow() - 1, H.length).getValues()
+      .filter(function (r) { return closed[String(r[cS] || '').trim().toUpperCase()] && String(r[cI] || '').trim(); })
+      .map(function (r) { return [String(r[cI]).trim(), String(r[cS]).trim().toUpperCase()]; });
+    withLock_(function () {
+      ids.forEach(function (p) { if (archivePipelineCandidateNow_(p[0], p[1])) moved++; });
+    });
+  }
+  out.push('✓ moved ' + moved + ' already-closed candidate(s) off Interview Pipeline');
+  out.push(WEBAPP_selfTest());
+  var msg = out.join('\n'); Logger.log(msg);
+  try { toast_('Console V2 setup done — moved ' + moved + ' closed row(s). See Execution log.', 'Recruiting OS', 10); } catch (e) {}
+  return msg;
 }

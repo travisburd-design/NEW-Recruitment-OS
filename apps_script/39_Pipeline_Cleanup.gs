@@ -193,6 +193,65 @@ function _sweepInterviewPipeline_(opts) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// INSTANT ARCHIVE — called right after a closing decision (9/26/26)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Move ONE candidate off the Interview Pipeline into Pipeline Archive right now,
+ * without waiting for the daily sweep. Called by _dispatchPipelineDecision_ after
+ * Reject / Archive / Drawer / Hire when PIPELINE_ARCHIVE_ON_DECISION=TRUE.
+ *
+ * Unlike the daily sweep this does NOT hold rejected / drawered candidates until
+ * their cancellable email sends — the manager can still undo from the Hiring
+ * Console "Closed" tab, or by picking "Reopen Candidate" on the Pipeline Archive
+ * tab. Reopen cancels the pending decline / hold email (restorePipelineCandidate).
+ *
+ * No lock taken here: every caller is already inside the decision path.
+ * Returns true if a row was moved.
+ */
+function archivePipelineCandidateNow_(candidateId, status) {
+  candidateId = String(candidateId || '').trim();
+  if (!candidateId) return false;
+  var ip = getSheetOrNull_(SHEETS.INTERVIEW_PIPELINE);
+  if (!ip) return false;
+  var hits = findRowsByColumnValue_(ip, 'Candidate ID', candidateId);
+  if (!hits.length) return false;
+
+  var headers = getHeaderRow_(ip);
+  var archHeaders = headers.concat(PIPELINE_ARCHIVE_EXTRA_COLS.filter(function (e) {
+    return headers.indexOf(e) === -1;
+  }));
+  var arch = getOrCreateSheet_(SHEETS.PIPELINE_ARCHIVE, archHeaders);
+  ensureHeaders_(arch, archHeaders);
+
+  var stamp = shopDateTime_();
+  var rec = {};
+  Object.keys(hits[0].data).forEach(function (k) { rec[k] = hits[0].data[k]; });
+  rec['Archived At']     = stamp;
+  rec['Archived Status'] = status || String(rec['Status'] || '');
+  rec['Archived From']   = SHEETS.INTERVIEW_PIPELINE + ' (on decision)';
+
+  var existing = findRowsByColumnValue_(arch, 'Candidate ID', candidateId);
+  if (existing.length) batchUpdateRow_(arch, existing[0].rowNum, rec);
+  else appendRowByHeader_(arch, rec);
+
+  // Delete bottom-up in case of stray duplicates for the same Candidate ID.
+  hits.map(function (h) { return h.rowNum; })
+      .sort(function (a, b) { return b - a; })
+      .forEach(function (rn) { ip.deleteRow(rn); });
+
+  logEvent_('PIPELINE_ARCHIVE_ON_DECISION', candidateId, { status: rec['Archived Status'], rows: hits.length });
+  return true;
+}
+
+/** True if this candidate currently sits on the Pipeline Archive tab. */
+function isInPipelineArchive_(candidateId) {
+  var arch = getSheetOrNull_(SHEETS.PIPELINE_ARCHIVE);
+  if (!arch || !candidateId) return false;
+  return findRowsByColumnValue_(arch, 'Candidate ID', String(candidateId).trim()).length > 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // RESTORE — move a candidate back onto the live pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 

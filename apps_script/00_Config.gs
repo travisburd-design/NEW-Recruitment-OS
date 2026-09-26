@@ -132,7 +132,8 @@ var DECISION = Object.freeze({
   REJECT:          'DECISION_REJECT',
   ARCHIVE:         'DECISION_ARCHIVE',
   REOPEN:          'DECISION_REOPEN',
-  HIRED:           'DECISION_HIRED'
+  HIRED:           'DECISION_HIRED',
+  REQUEST_PRESCREEN: 'DECISION_REQUEST_PRESCREEN'
 });
 
 // The exact order the Manager Decision dropdown should present its options,
@@ -153,6 +154,7 @@ var MANAGER_DECISION_ORDER = Object.freeze([
   'DECISION_HIRED',
   'DECISION_PUT_IN_DRAWER',
   // Group 2 — alternate / manual advance actions
+  'DECISION_REQUEST_PRESCREEN',
   'DECISION_ADVANCE_PHONE',
   'DECISION_ADVANCE_WORKING',
   'DECISION_MAKE_OFFER',
@@ -282,6 +284,7 @@ var CFG_DEFAULTS = Object.freeze({
   DECISION_HIRED:                       'Confirm Hire',
   DECISION_PUT_IN_DRAWER:               'Put in the Drawer',
   // Group 2 — alternate / manual advance actions
+  DECISION_REQUEST_PRESCREEN:           'Request Pre-Screen (Required)',
   DECISION_ADVANCE_PHONE:               'Send Phone Screen Booking',
   DECISION_ADVANCE_WORKING:             'Send Working Interview',
   DECISION_MAKE_OFFER:                  'Extend Offer',
@@ -411,6 +414,11 @@ var CFG_DEFAULTS = Object.freeze({
   ENGAGEMENT_SCORING_ENABLED:           'TRUE',
   ENGAGEMENT_FAST_RESPONSE_HOURS:       '24',
   PRESCREEN_STALE_DAYS:                 '3',
+  // 9/26/26: closed-out decisions (Reject / Archive / Drawer / Hire) leave the
+  // Interview Pipeline the moment they are made instead of waiting for the daily
+  // sweep. Reopen still works from the Hiring Console "Closed" tab or by picking
+  // "Reopen Candidate" on the Pipeline Archive tab.
+  PIPELINE_ARCHIVE_ON_DECISION:         'TRUE',
   STUCK_CANDIDATE_DAYS:                 '5',
   REQUIRE_CONTACT_VERIFIED_FOR_BOOKING: 'FALSE',
   REFERENCE_CHECK_ENABLED:              'TRUE',

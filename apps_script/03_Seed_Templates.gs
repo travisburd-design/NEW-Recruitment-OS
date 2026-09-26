@@ -58,6 +58,20 @@ var SEED_EMAIL_TEMPLATES = [
     'Notes': 'Most important first message — explains the why behind the process, not just the ask.'
   },
   {
+    'Template Key': 'prescreen_required',
+    'Subject':      'Action needed: complete your pre-screen for {{RoleName}} at {{ShopName}}',
+    'Body':
+'Hi {{CandidateFirstName}},\n\n' +
+'Thank you for applying for the {{RoleName}} role at {{ShopName}}. We received your application, but your pre-screen has not been completed yet.\n\n' +
+'Here is how our process works: applying on Indeed gets your name to us, but the pre-screen is what puts you in consideration. We only review candidates who have completed it.\n\n' +
+'Please complete it here:\n{{PrescreenFormLink}}\n\n' +
+'Set aside some uninterrupted time and answer in your own words. There are no trick answers; we want to understand how you work, what you know, and what you are looking for in your next job.\n\n' +
+'Once you submit, a real person on our team reviews it and reaches back out with the next step. If you have any trouble with the link, reply to this email and we will help.\n\n' +
+'Thank you,\n{{CompanySignatureName}}\n{{ShopName}} · {{CompanyPhone}}',
+    'Required Merge Fields': 'CandidateFirstName,RoleName,ShopName,PrescreenFormLink,CompanySignatureName,CompanyPhone',
+    'Notes': 'Manager decision "Request Pre-Screen (Required)". Sent when an applicant landed on the list from Indeed but has not filled out the pre-screen. Makes clear the pre-screen, not the Indeed application, is what gets them considered.'
+  },
+  {
     'Template Key': 'phone_screen_booking',
     'Subject':      'Let\'s talk about the {{RoleName}} role — pick a time',
     'Body':

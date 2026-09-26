@@ -34,7 +34,16 @@
  *                                (cancellable), Status=REJECTED
  *   Archive — No Email        → Status=ARCHIVED, no email sent
  *   Reopen Candidate          → cancel pending rejection/drawer emails,
- *                                Status=MANUAL_REVIEW
+ *                                Status=MANUAL_REVIEW (works from Pipeline
+ *                                Archive too — the row is moved back)
+ *   Request Pre-Screen        → queue prescreen_required (pre-screen form link;
+ *   (Required)                   "applying on Indeed does not put you in
+ *                                consideration — the pre-screen does"),
+ *                                Status=PRESCREEN_SENT
+ *
+ * 9/26/26 — INSTANT CLEANUP: Reject / Archive / Drawer / Hire move the row off
+ * Interview Pipeline into Pipeline Archive immediately (Config
+ * PIPELINE_ARCHIVE_ON_DECISION, default TRUE) instead of waiting for the sweep.
  *
  * Public functions:
  *   onPipelineEdit(e)                                  — trigger handler
@@ -52,7 +61,9 @@ function onPipelineEdit(e) {
   return safeRun_('onPipelineEdit', function () {
     if (!e || !e.range) return;
     var sh = e.range.getSheet();
-    if (sh.getName() !== SHEETS.INTERVIEW_PIPELINE) return;
+    var sheetName = sh.getName();
+    if (sheetName === SHEETS.PIPELINE_ARCHIVE) return _onArchiveEdit_(e, sh);
+    if (sheetName !== SHEETS.INTERVIEW_PIPELINE) return;
     if (e.range.getNumRows() !== 1 || e.range.getNumColumns() !== 1) return; // single-cell edits only
 
     var decisionCol = getColIndex_(sh, 'Manager Decision');
@@ -123,21 +134,56 @@ function _dispatchPipelineDecision_(candidateId, decisionValue, candidate, rowNu
   // Record the decision-date + last-updated regardless of branch
   _stampDecision_(candidateId);
 
+  var result = null;
   switch (action) {
-    case 'ADVANCE_PHONE':   return _dispatchAdvancePhone_(candidateId, candidate);
-    case 'ADVANCE_LIVE':    return _dispatchAdvanceLive_(candidateId, candidate);
-    case 'ADVANCE_WORKING': return _dispatchAdvanceWorking_(candidateId, candidate);
-    case 'REQUEST_REFS':    return _dispatchRequestReferences_(candidateId, candidate);
-    case 'MAKE_OFFER':      return _dispatchMakeOffer_(candidateId, candidate);
-    case 'NEEDS_INFO':      return _dispatchNeedsInfo_(candidateId, candidate);
-    case 'PUT_IN_DRAWER':   return _dispatchDrawer_(candidateId, candidate);
-    case 'REJECT':          return _dispatchReject_(candidateId, candidate);
-    case 'ARCHIVE':         return _dispatchArchive_(candidateId, candidate);
-    case 'REOPEN':          return _dispatchReopen_(candidateId, candidate);
-    case 'HIRED':           return _dispatchHired_(candidateId, candidate);
-    case 'INTERVIEW_BOOKED': return PEOPLE_dispatchInterviewBooked_(candidateId, candidate);
+    case 'ADVANCE_PHONE':   result = _dispatchAdvancePhone_(candidateId, candidate); break;
+    case 'ADVANCE_LIVE':    result = _dispatchAdvanceLive_(candidateId, candidate); break;
+    case 'ADVANCE_WORKING': result = _dispatchAdvanceWorking_(candidateId, candidate); break;
+    case 'REQUEST_REFS':    result = _dispatchRequestReferences_(candidateId, candidate); break;
+    case 'MAKE_OFFER':      result = _dispatchMakeOffer_(candidateId, candidate); break;
+    case 'NEEDS_INFO':      result = _dispatchNeedsInfo_(candidateId, candidate); break;
+    case 'PUT_IN_DRAWER':   result = _dispatchDrawer_(candidateId, candidate); break;
+    case 'REJECT':          result = _dispatchReject_(candidateId, candidate); break;
+    case 'ARCHIVE':         result = _dispatchArchive_(candidateId, candidate); break;
+    case 'REOPEN':          result = _dispatchReopen_(candidateId, candidate); break;
+    case 'HIRED':           result = _dispatchHired_(candidateId, candidate); break;
+    case 'INTERVIEW_BOOKED': result = PEOPLE_dispatchInterviewBooked_(candidateId, candidate); break;
+    case 'REQUEST_PRESCREEN': result = _dispatchRequestPrescreen_(candidateId, candidate); break;
   }
-  return null;
+
+  // 9/26/26 — closed-out candidates leave the working pipeline immediately.
+  var CLOSING = { REJECT: STATUS.REJECTED, ARCHIVE: STATUS.ARCHIVED, PUT_IN_DRAWER: STATUS.IN_DRAWER, HIRED: STATUS.HIRED };
+  if (CLOSING[action] && CFG.getBool('PIPELINE_ARCHIVE_ON_DECISION', true) &&
+      typeof archivePipelineCandidateNow_ === 'function') {
+    safeRun_('_dispatchPipelineDecision_:archiveNow', function () {
+      if (archivePipelineCandidateNow_(candidateId, CLOSING[action]) && result) result.archived = true;
+    });
+  }
+  return result;
+}
+
+/**
+ * Pipeline Archive tab: picking "Reopen Candidate" in a row's Manager Decision
+ * cell moves that candidate back onto Interview Pipeline (MANUAL_REVIEW) and
+ * cancels any pending decline / hold email. Anything else is ignored.
+ */
+function _onArchiveEdit_(e, sh) {
+  if (e.range.getNumRows() !== 1 || e.range.getNumColumns() !== 1) return;
+  var decisionCol = getColIndex_(sh, 'Manager Decision');
+  if (!decisionCol || e.range.getColumn() !== decisionCol || e.range.getRow() < 2) return;
+  var v = String(e.value != null ? e.value : e.range.getValue() || '').trim();
+  if (!v) return;
+  if (_decisionToAction_(v) !== 'REOPEN') {
+    toast_('On the archive tab only "' + CFG.get('DECISION_REOPEN', 'Reopen Candidate') +
+           '" does anything. Reopen first, then decide on the Interview Pipeline.', 'Recruiting OS', 8);
+    return;
+  }
+  var cidCol = getColIndex_(sh, 'Candidate ID');
+  var cid = cidCol ? String(sh.getRange(e.range.getRow(), cidCol).getValue() || '').trim() : '';
+  if (!cid) { toast_('That archive row has no Candidate ID.', 'Recruiting OS', 6); return; }
+  var msg = restorePipelineCandidate(cid);
+  logEvent_('CANDIDATE_REOPENED', cid, { from: 'Pipeline Archive', result: msg });
+  toast_(msg, 'Recruiting OS', 8);
 }
 
 /** Map the dropdown's visible text back to a canonical action code. */
@@ -158,6 +204,7 @@ function _decisionToAction_(value) {
   if (s === CFG.get('DECISION_REOPEN'))          return 'REOPEN';
   if (s === CFG.get('DECISION_HIRED'))           return 'HIRED';
   if (s === CFG.get('DECISION_INTERVIEW_BOOKED', 'Interview Booked (Manual)')) return 'INTERVIEW_BOOKED';
+  if (s === CFG.get('DECISION_REQUEST_PRESCREEN', 'Request Pre-Screen (Required)')) return 'REQUEST_PRESCREEN';
   return null;
 }
 
@@ -315,7 +362,50 @@ function _dispatchArchive_(candidateId, candidate) {
   return { action: 'ARCHIVE', emailSent: false };
 }
 
+/**
+ * "Request Pre-Screen (Required)" — the applicant is on the list (usually an
+ * Indeed import) but never completed the pre-screen. Sends the prescreen_required
+ * email with the form link and makes clear the Indeed application alone does not
+ * put them in consideration. Candidate moves to "Waiting on pre-screen".
+ * The email queue's same-template window stops accidental double-sends.
+ */
+function _dispatchRequestPrescreen_(candidateId, candidate) {
+  var email = String(candidate['Email'] || '').trim();
+  if (!email) {
+    var ac = _getCandidateRow_(candidateId);
+    email = ac ? String(ac['Email'] || '').trim() : '';
+  }
+  if (!email) {
+    logError_('_dispatchRequestPrescreen_', 'no email on file — cannot request pre-screen', candidateId, 'WARN');
+    toast_('No email on file for this candidate — add one, then pick the decision again.', 'Recruiting OS', 8);
+    return { action: 'REQUEST_PRESCREEN', emailQueued: false, reason: 'no email' };
+  }
+  var link = CFG.get('PRESCREEN_FORM_URL') || (typeof getFormUrl_ === 'function' ? getFormUrl_('PRESCREEN') : '');
+  if (!link) {
+    logError_('_dispatchRequestPrescreen_', 'PRESCREEN_FORM_URL is blank in Config', candidateId, 'ERROR');
+    return { action: 'REQUEST_PRESCREEN', emailQueued: false, reason: 'PRESCREEN_FORM_URL blank' };
+  }
+  var qid = sendTemplatedEmail_('prescreen_required', email, candidateId, { PrescreenFormLink: link }, {
+    reason: 'manager decision: request pre-screen (required for consideration)'
+  });
+  _setBothStatuses_(candidateId, STATUS.PRESCREEN_SENT,
+    'Pre-screen requested by manager (required for consideration): ' + shopDateTime_(),
+    { 'Next Action Due': 'Waiting on candidate pre-screen' });
+  var ac2 = getSheetOrNull_(SHEETS.ALL_CANDIDATES);
+  if (ac2) updateRowWhere_(ac2, 'Candidate ID', candidateId, { 'Form Sent': shopDateTime_() });
+  logEvent_('PRESCREEN_REQUESTED', candidateId, { to: email, queueId: qid });
+  return { action: 'REQUEST_PRESCREEN', emailQueued: !!qid, queueId: qid };
+}
+
 function _dispatchReopen_(candidateId, candidate) {
+  // Candidate was already moved to Pipeline Archive → bring the row back
+  // (restorePipelineCandidate also cancels pending decline / hold emails).
+  if (typeof isInPipelineArchive_ === 'function' && isInPipelineArchive_(candidateId)) {
+    var msg = restorePipelineCandidate(candidateId);
+    logEvent_('CANDIDATE_REOPENED', candidateId, { from: 'Pipeline Archive', result: msg });
+    toast_(msg, 'Recruiting OS', 6);
+    return { action: 'REOPEN', restoredFromArchive: true, message: msg };
+  }
   // Cancel any pending rejection or drawer emails
   var cancelled = 0;
   cancelled += cancelQueuedEmailsForCandidate_(candidateId, 'gracious_decline');
@@ -542,7 +632,7 @@ function DROPDOWN_selfTest() {
   var keys = ['DECISION_ADVANCE_PHONE', 'DECISION_ADVANCE_LIVE', 'DECISION_ADVANCE_WORKING',
               'DECISION_REQUEST_REFERENCES', 'DECISION_MAKE_OFFER', 'DECISION_NEEDS_INFO',
               'DECISION_PUT_IN_DRAWER', 'DECISION_REJECT', 'DECISION_ARCHIVE',
-              'DECISION_REOPEN', 'DECISION_HIRED'];
+              'DECISION_REOPEN', 'DECISION_HIRED', 'DECISION_REQUEST_PRESCREEN'];
   keys.forEach(function (k) {
     var v = CFG.get(k);
     var action = v ? _decisionToAction_(v) : null;

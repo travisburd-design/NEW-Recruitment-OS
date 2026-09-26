@@ -20,14 +20,19 @@
     letter-spacing:.04em;margin-left:6px}
   .mode.TEST{background:#4a3a12;color:var(--gold)}
   .mode.LIVE{background:#123a2a;color:var(--good)}
-  .bar{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .bar{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;align-items:center}
   .bar::-webkit-scrollbar{display:none}
   .tab,select{background:var(--chip);color:var(--ink);border:1px solid var(--line);
     border-radius:8px;padding:6px 11px;font-size:13px;white-space:nowrap;cursor:pointer;font-family:inherit}
+  .tab .n{display:inline-block;min-width:18px;margin-left:5px;padding:0 5px;border-radius:9px;
+    background:#0f1512;color:var(--dim);font-size:11px;text-align:center}
   .tab.on{background:var(--gold);color:#1a1206;border-color:var(--gold);font-weight:650}
-  main{padding:12px 12px 0;max-width:760px;margin:0 auto}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:14px;margin-bottom:10px}
+  .tab.on .n{background:#1a120622;color:#1a1206}
+  .hint{color:var(--dim);font-size:12.5px;padding:10px 16px 0;max-width:1900px;margin:0 auto}
+  main{padding:12px 16px 0;max-width:1900px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:12px;align-items:start}
+  @media(max-width:640px){main{grid-template-columns:1fr;padding:12px 12px 0}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
   .top{display:flex;gap:12px;align-items:flex-start}
   .score{flex:0 0 58px;text-align:center;border-radius:10px;padding:8px 4px;background:#101815;
     border:1px solid var(--line)}
@@ -51,15 +56,23 @@
   details{margin-top:8px}
   summary{cursor:pointer;font-size:12px;color:var(--dim);outline:none}
   .bd{font-size:11.5px;color:#a8bcb2;margin-top:5px;line-height:1.6;word-break:break-word}
-  .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
-  button{border:none;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:600;
+  .acts{margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .row + .row{margin-top:6px}
+  .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);width:100%;margin:2px 0 -1px}
+  button{border:none;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:600;
     cursor:pointer;font-family:inherit}
   .b-go{background:var(--good);color:#06170f}
   .b-live{background:var(--gold);color:#1a1206}
-  .b-ghost{background:var(--chip);color:var(--dim);border:1px solid var(--line)}
+  .b-ghost{background:var(--chip);color:#c3d4cc;border:1px solid var(--line)}
+  .b-ghost:hover{border-color:#3d5046;color:var(--ink)}
   .b-no{background:#3a1f1d;color:#f0a79f;border:1px solid #6b332e}
-  a.res{color:var(--gold);text-decoration:none;font-size:12.5px;align-self:center;padding:0 4px}
-  .empty{text-align:center;color:var(--dim);padding:48px 20px;font-size:14px}
+  .b-arm{background:var(--bad)!important;color:#fff!important;border-color:var(--bad)!important}
+  a.res{color:var(--gold);text-decoration:none;font-size:12.5px;padding:0 4px}
+  .why{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;padding:8px;
+    border:1px solid #6b332e;border-radius:8px;background:#221614}
+  .why select{padding:5px 8px}
+  .empty{grid-column:1/-1;text-align:center;color:var(--dim);padding:48px 20px;font-size:14px}
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;
     background:#1e2a24;border:1px solid var(--line);color:var(--ink);padding:10px 16px;
     border-radius:10px;font-size:13.5px;box-shadow:0 8px 28px #0009;max-width:90vw}
@@ -76,24 +89,52 @@
   <h1><?= shopName ?> — Hiring Console<span id="mode" class="mode"></span></h1>
   <div class="sub" id="sub">Loading…</div>
   <div class="bar">
-    <div class="tab on" data-b="decide">Needs decision</div>
-    <div class="tab" data-b="booked">In progress</div>
+    <div class="tab on" data-b="decide">Needs decision<span class="n" id="n-decide"></span></div>
+    <div class="tab" data-b="prescreen">Waiting on pre-screen<span class="n" id="n-prescreen"></span></div>
+    <div class="tab" data-b="booked">In progress<span class="n" id="n-booked"></span></div>
+    <div class="tab" data-b="closed">Closed (reopen)<span class="n" id="n-closed"></span></div>
     <div class="tab" data-b="all">All active</div>
     <select id="role"><option value="">All roles</option></select>
     <div class="tab" id="refresh">Refresh</div>
   </div>
 </header>
 
+<div class="hint" id="hint"></div>
 <main id="list"><div class="empty"><span class="spin"></span> Loading candidates…</div></main>
 
 <script>
-var STATE = { bucket:'decide', role:'', data:[] };
+var STATE = { bucket:'decide', role:'', data:[], actions:[], reasons:[] };
 
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
-  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var HINTS = {
+  decide:   'Candidates who completed the pre-screen and need your call. Every Manager Decision option is a button on the card.',
+  prescreen:'Applied (usually on Indeed) but never finished the pre-screen. Applying does not put them in consideration — use “Request Pre-Screen” to send the form.',
+  booked:   'Candidates already moving (interview booked, references out, offer pending). No action needed unless something changes.',
+  closed:   'Rejected, archived, or in the drawer. These are off the Interview Pipeline. Use Reopen to bring someone back — it cancels any decline or hold email that has not gone out yet.',
+  all:      'Everyone who is not closed out.'
+};
+
+// Suggested (highlighted) decisions by status. Everything else is still one click away.
+var SUGGEST = {
+  PRESCREEN_SENT:['REQUEST_PRESCREEN'], NEW:['REQUEST_PRESCREEN','ADVANCE_LIVE'],
+  MANUAL_REVIEW:['ADVANCE_LIVE','INTERVIEW_BOOKED'], SCORED:['ADVANCE_LIVE','INTERVIEW_BOOKED'],
+  PRESCREEN_RECEIVED:['ADVANCE_LIVE','INTERVIEW_BOOKED'],
+  PHONE_DONE:['ADVANCE_LIVE'], FULL_DONE:['REQUEST_REFS','HIRED'],
+  REFS_REQUESTED:['HIRED'], REFS_PENDING:['HIRED'], REFS_COMPLETE:['HIRED','MAKE_OFFER'],
+  RECOMMENDED:['HIRED','MAKE_OFFER'], OFFER_PENDING:['HIRED']
+};
+var CLOSED = { REJECTED:1, ARCHIVED:1, IN_DRAWER:1 };
+var GROUPS = [
+  { name:'Move forward', codes:['ADVANCE_LIVE','INTERVIEW_BOOKED','REQUEST_REFS','HIRED','MAKE_OFFER'] },
+  { name:'Other actions', codes:['REQUEST_PRESCREEN','ADVANCE_PHONE','ADVANCE_WORKING','NEEDS_INFO'] },
+  { name:'Close out', codes:['DRAWER','REJECT','ARCHIVE'] }
+];
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function has(v){ return v!==null && v!==undefined && v!=='' && !(typeof v==='number' && isNaN(v)); }
 
 function scoreClass(s){
-  if(s===null||s===undefined) return 's-none';
+  if(!has(s)) return 's-none';
   if(s>=80) return 's-hi'; if(s>=60) return 's-mid'; return 's-lo';
 }
 
@@ -101,10 +142,11 @@ function toast(msg, isErr){
   var t=document.createElement('div');
   t.className='toast'+(isErr?' err':''); t.textContent=msg;
   document.body.appendChild(t);
-  setTimeout(function(){t.remove();}, isErr?5200:2800);
+  setTimeout(function(){t.remove();}, isErr?6000:3200);
 }
 
 function load(){
+  document.getElementById('hint').textContent = HINTS[STATE.bucket]||'';
   document.getElementById('list').innerHTML =
     '<div class="empty"><span class="spin"></span> Loading…</div>';
   google.script.run.withSuccessHandler(render)
@@ -115,18 +157,26 @@ function load(){
     .WEBAPP_getQueue({ bucket: STATE.bucket, role: STATE.role });
 }
 
+function setCount(id,n){ var el=document.getElementById(id); if(el) el.textContent = has(n)?n:''; }
+
 function render(res){
   if(!res || !res.ok){
     document.getElementById('list').innerHTML =
       '<div class="empty">'+esc((res&&res.error)||'Error')+'</div>';
     return;
   }
-  STATE.data = res.candidates;
+  STATE.data = res.candidates || [];
+  STATE.actions = res.actions || [];
+  STATE.reasons = res.rejectionReasons || [];
 
   var m=document.getElementById('mode');
   m.textContent=res.mode; m.className='mode '+res.mode;
+  var k=res.counts||{};
   document.getElementById('sub').textContent =
-    res.counts.decide+' awaiting decision · '+res.counts.booked+' in progress · signed in as '+res.viewer;
+    (k.decide||0)+' need a decision · '+(k.prescreen||0)+' waiting on pre-screen · '+
+    (k.booked||0)+' in progress · signed in as '+(res.viewer||'');
+  setCount('n-decide',k.decide); setCount('n-prescreen',k.prescreen);
+  setCount('n-booked',k.booked); setCount('n-closed',k.closed);
 
   var sel=document.getElementById('role');
   if(sel.options.length<=1 && res.roles){
@@ -136,19 +186,24 @@ function render(res){
     sel.value=STATE.role;
   }
 
-  if(!res.candidates.length){
+  if(!STATE.data.length){
     document.getElementById('list').innerHTML='<div class="empty">Nothing here. Nice.</div>';
     return;
   }
-  document.getElementById('list').innerHTML = res.candidates.map(card).join('');
+  document.getElementById('list').innerHTML = STATE.data.map(card).join('');
+}
+
+function actionByCode(code){
+  for(var i=0;i<STATE.actions.length;i++) if(STATE.actions[i].code===code) return STATE.actions[i];
+  return null;
 }
 
 function card(c){
   var chips=[];
   if(c.tier) chips.push('<span class="chip">'+esc(c.tier)+'</span>');
   chips.push('<span class="chip">'+esc(c.status)+'</span>');
-  if(c.risk!==null) chips.push('<span class="chip'+(c.risk>=5?' risk':'')+'">risk '+c.risk+'</span>');
-  if(c.phoneScore!==null) chips.push('<span class="chip ok">phone '+c.phoneScore+'</span>');
+  if(has(c.risk)) chips.push('<span class="chip'+(c.risk>=5?' risk':'')+'">risk '+esc(c.risk)+'</span>');
+  if(has(c.phoneScore)) chips.push('<span class="chip ok">phone '+esc(c.phoneScore)+'</span>');
   if(c.confidence) chips.push('<span class="chip">'+esc(c.confidence)+' confidence</span>');
   if(c.gateFailed) chips.push('<span class="chip gate">⚠ '+esc(c.gateReasons||'hard gate')+'</span>');
 
@@ -158,65 +213,118 @@ function card(c){
       arr.slice(0,3).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
   }
 
-  var isPhoneDone = c.status==='PHONE_DONE';
-  var isFullDone  = c.status==='FULL_DONE';
-
   var acts = '';
-  if(isFullDone){
-    acts += btn(c.id,'REQUEST_REFS','Request references','b-go');
-    acts += btn(c.id,'HIRED','Hire','b-live');
-  } else if(isPhoneDone){
-    acts += btn(c.id,'ADVANCE_LIVE','Advance to live interview','b-go');
+  if(CLOSED[c.status]){
+    acts += '<div class="row">'+btn(c.id,'REOPEN','b-go')+
+            (c.status!=='ARCHIVED'?btn(c.id,'ARCHIVE','b-ghost'):'')+extras(c)+'</div>';
   } else {
-    acts += btn(c.id,'ADVANCE_PHONE','Send phone screen','b-go');
-    acts += btn(c.id,'ADVANCE_LIVE','Straight to live','b-live');
+    var sug = SUGGEST[c.status] || [];
+    GROUPS.forEach(function(g){
+      var b = g.codes.map(function(code){
+        if(!actionByCode(code)) return '';
+        var cls = code==='REJECT' ? 'b-no'
+                : (sug.indexOf(code)===0 ? 'b-go' : (sug.indexOf(code)>0 ? 'b-live' : 'b-ghost'));
+        return btn(c.id,code,cls);
+      }).join('');
+      if(b) acts += '<div class="row"><div class="lbl">'+g.name+'</div>'+b+'</div>';
+    });
+    acts += '<div class="row">'+extras(c)+'</div>';
   }
-  acts += btn(c.id,'DRAWER','Drawer','b-ghost');
-  acts += btn(c.id,'REJECT','Decline','b-no');
-  if(c.score===null) acts += '<button class="b-ghost" onclick="rescore(\''+c.id+'\',this)">Score now</button>';
-  if(c.resume) acts += '<a class="res" href="'+esc(c.resume)+'" target="_blank" rel="noopener">Resume ↗</a>';
 
+  var scoreTxt = has(c.score) ? esc(c.score) : '—';
   return '<div class="card" id="c-'+esc(c.id)+'">'+
     '<div class="top">'+
-      '<div class="score '+scoreClass(c.score)+'"><b>'+(c.score===null?'—':c.score)+'</b><span>SCORE</span></div>'+
+      '<div class="score '+scoreClass(c.score)+'"><b>'+scoreTxt+'</b><span>SCORE</span></div>'+
       '<div class="who">'+
         '<div class="nm">'+esc(c.name)+'</div>'+
-        '<div class="meta">'+esc(c.role)+(c.received?' · applied '+esc(String(c.received).split(' ')[0]):'')+
-          (c.phone?' · '+esc(c.phone):'')+'</div>'+
+        '<div class="meta">'+esc(c.role)+(c.received?' · applied '+esc(c.received):'')+
+          (c.phone?' · '+esc(c.phone):'')+(c.email?' · '+esc(c.email):'')+'</div>'+
         '<div class="chips">'+chips.join('')+'</div>'+
       '</div>'+
     '</div>'+
     (c.summary?'<div class="sum">'+esc(c.summary)+'</div>':'')+
-    ((c.strengths.length||c.concerns.length)?
+    (((c.strengths||[]).length||(c.concerns||[]).length)?
       '<div class="cols">'+list('Strengths',c.strengths)+list('Concerns',c.concerns)+'</div>':'')+
     (c.breakdown?'<details><summary>Score breakdown</summary><div class="bd">'+
       esc(c.breakdown).split(' | ').join('<br>')+'</div></details>':'')+
     (c.recommendation?'<div class="meta" style="margin-top:8px">Composite: '+esc(c.recommendation)+'</div>':'')+
     '<div class="acts">'+acts+'</div>'+
+    '<div id="why-'+esc(c.id)+'"></div>'+
   '</div>';
 }
 
-function btn(id,action,label,cls){
-  return '<button class="'+cls+'" onclick="decide(\''+id+'\',\''+action+'\',this)">'+label+'</button>';
+function extras(c){
+  var x='';
+  if(!has(c.score) && !CLOSED[c.status] && c.status!=='PRESCREEN_SENT')
+    x += '<button class="b-ghost" data-id="'+esc(c.id)+'" onclick="rescore(this)">Score now</button>';
+  if(c.resume) x += '<a class="res" href="'+esc(c.resume)+'" target="_blank" rel="noopener">Resume ↗</a>';
+  return x;
 }
 
-function decide(id, action, el){
+function btn(id,code,cls){
+  var a = actionByCode(code); if(!a) return '';
+  return '<button class="'+cls+'" data-id="'+esc(id)+'" data-code="'+code+'" data-label="'+esc(a.label)+
+         '" data-confirm="'+(a.confirm?1:0)+'" onclick="press(this)">'+esc(a.label)+'</button>';
+}
+
+// Two-click confirm for Reject / Archive / Hire / Offer; Reject also asks why.
+function press(el){
+  var id=el.getAttribute('data-id'), code=el.getAttribute('data-code');
+  if(code==='REJECT') return askReason(id, el);
+  if(el.getAttribute('data-confirm')==='1' && !el.classList.contains('b-arm')){
+    el.classList.add('b-arm'); el.textContent='Confirm: '+el.getAttribute('data-label')+'?';
+    setTimeout(function(){ if(el.isConnected && el.classList.contains('b-arm')){
+      el.classList.remove('b-arm'); el.textContent=el.getAttribute('data-label'); } }, 4000);
+    return;
+  }
+  decide(id, code, el, {});
+}
+
+function askReason(id, el){
+  var box=document.getElementById('why-'+id); if(!box) return;
+  if(box.innerHTML){ box.innerHTML=''; return; }
+  var opts = STATE.reasons.map(function(r){return '<option>'+esc(r)+'</option>';}).join('');
+  box.innerHTML = '<div class="why"><span style="font-size:12.5px;color:#f0a79f">Rejection reason:</span>'+
+    '<select id="rs-'+esc(id)+'"><option value="">— pick one —</option>'+opts+'</select>'+
+    '<button class="b-no" data-id="'+esc(id)+'" onclick="confirmReject(this)">Confirm reject</button>'+
+    '<button class="b-ghost" onclick="this.parentNode.parentNode.innerHTML=\'\'">Cancel</button></div>';
+}
+
+function confirmReject(el){
+  var id=el.getAttribute('data-id');
+  var sel=document.getElementById('rs-'+id);
+  var reason = sel ? sel.value : '';
+  if(!reason && STATE.reasons.length){ toast('Pick a rejection reason first', true); return; }
+  decide(id, 'REJECT', el, { reason: reason });
+}
+
+function decide(id, code, el, opts){
   var card=document.getElementById('c-'+id);
   if(card) card.classList.add('busy');
   el.innerHTML='<span class="spin"></span>';
   google.script.run
     .withSuccessHandler(function(r){
-      if(r && r.ok){ toast(r.message); if(card) card.remove(); checkEmpty(); }
+      if(r && r.ok){ toast(r.message); if(card) card.remove(); checkEmpty(); refreshCounts(); }
       else { toast((r&&r.message)||'Failed', true); if(card) card.classList.remove('busy'); load(); }
     })
     .withFailureHandler(function(e){
       toast('Failed: '+e.message, true);
       if(card) card.classList.remove('busy'); load();
     })
-    .WEBAPP_decide(id, action);
+    .WEBAPP_decide(id, code, opts||{});
 }
 
-function rescore(id, el){
+// Update tab counts in the background without redrawing the list.
+function refreshCounts(){
+  google.script.run.withSuccessHandler(function(res){
+    if(!res||!res.ok) return; var k=res.counts||{};
+    setCount('n-decide',k.decide); setCount('n-prescreen',k.prescreen);
+    setCount('n-booked',k.booked); setCount('n-closed',k.closed);
+  }).WEBAPP_getQueue({ bucket:'__counts__', role: STATE.role });
+}
+
+function rescore(el){
+  var id=el.getAttribute('data-id');
   el.innerHTML='<span class="spin"></span>';
   google.script.run
     .withSuccessHandler(function(r){ toast((r&&r.message)||'Done', !(r&&r.ok)); load(); })
