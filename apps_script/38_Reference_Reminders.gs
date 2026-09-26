@@ -75,7 +75,7 @@ function sendReferenceDeadlineReminders() {
           sendTemplatedEmail_('reference_culture_reminder', email, cid, {
             ResponseDeadline: label
           }, {
-            reason: 'reference/culture deadline reminder'
+            reason: 'references deadline reminder'
           });
           if (H['Reference Reminder Sent'] !== undefined) {
             updateRowWhere_(ip, 'Candidate ID', cid, { 'Reference Reminder Sent': shopDateTime_() });
@@ -88,7 +88,7 @@ function sendReferenceDeadlineReminders() {
       // 2) Auto-park — deadline + grace elapsed with no submission.
       if (autoPark && (now - deadlineMs) > graceMs) {
         _setCandidateStatus_(cid, STATUS.IN_DRAWER,
-          'Auto-parked: no references/culture submitted by ' + shopDateTime_(deadline) + ' (+ ' + graceHours + 'h grace)');
+          'Auto-parked: no references submitted by ' + shopDateTime_(deadline) + ' (+ ' + graceHours + 'h grace)');
         logEvent_('REF_NO_RESPONSE_PARKED', cid, { deadline: shopDateTime_(deadline) });
         summary.parked++;
       }

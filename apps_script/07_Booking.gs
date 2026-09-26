@@ -40,6 +40,9 @@ var BOOKING_EVENTS_HEADERS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 function sendPhoneBookingLink_(candidateId) {
+  // RETIRED 9/26/26 — no phone screen. Kept only so old callers fail safe.
+  logEvent_('PHONE_SCREEN_RETIRED_BLOCKED', candidateId, { fn: 'sendPhoneBookingLink_' });
+  return '';
   var c = _getCandidateRow_(candidateId);
   if (!c) { logError_('sendPhoneBookingLink_', 'candidate not found: ' + candidateId, candidateId, 'WARN'); return ''; }
   if (!c['Email']) { logError_('sendPhoneBookingLink_', 'no email', candidateId, 'WARN'); return ''; }

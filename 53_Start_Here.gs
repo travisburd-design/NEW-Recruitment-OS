@@ -172,9 +172,9 @@ function STARTHERE_buildGmDaily_() {
     'Interview Pipeline tab → read the AI Recommendation → choose a value in the Manager Decision dropdown. That one ' +
     'click sends the right email and moves the candidate forward. You never type a status or send an email yourself.', 'body');
   push('3.  Decisions you will use most',
-    '①  ' + dec('DECISION_ADVANCE_LIVE', 'Advance to Live Interview') + ' — emails them the live-interview booking link.\n' +
+    '①  ' + dec('DECISION_ADVANCE_LIVE', 'Advance to Live Interview') + ' — emails them the in-person interview booking link (only if the system has not already sent it — it never double-sends).\n' +
     '②  ' + dec('DECISION_INTERVIEW_BOOKED', 'Interview Booked (Manual)') + ' — you booked them yourself (phone/in person). NO email, never auto-archived.\n' +
-    '③  ' + dec('DECISION_REQUEST_REFERENCES', 'Request References') + ' — references + culture-fit forms; the rest runs unattended.\n' +
+    '③  ' + dec('DECISION_REQUEST_REFERENCES', 'Request References') + ' — after the interview: asks for references only (culture fit is already scored from the pre-screen); the rest runs unattended.\n' +
     '④  ' + dec('DECISION_HIRED', 'Confirm Hire') + ' — adds them to the People Registry as a Current Employee. The system never emails them again; you get the onboarding checklist.\n' +
     '     …or ' + dec('DECISION_PUT_IN_DRAWER', 'Put in the Drawer') + ' to keep them warm without hiring.', 'body');
   push('Booked someone by phone who is NOT in the sheet?',
@@ -190,7 +190,7 @@ function STARTHERE_buildGmDaily_() {
   push('Made a mistake?',
     'Pick "' + dec('DECISION_REOPEN', 'Reopen Candidate') + '". Rejection and drawer emails are delayed — reopening cancels them before they send.', 'body');
   push('Other choices (rarely needed)',
-    [dec('DECISION_ADVANCE_PHONE', 'Send Phone Screen Booking'), dec('DECISION_ADVANCE_WORKING', 'Send Working Interview'),
+    [dec('DECISION_REQUEST_PRESCREEN', 'Request Pre-Screen (Required)') + ' (applied on Indeed, never did the pre-screen)', dec('DECISION_ADVANCE_WORKING', 'Send Working Interview'),
      dec('DECISION_MAKE_OFFER', 'Extend Offer'), dec('DECISION_NEEDS_INFO', 'Needs More Info'),
      dec('DECISION_REJECT', 'Reject') + ' (set Rejection Reason first)', dec('DECISION_ARCHIVE', 'Archive — No Email')].join(' · '), 'body');
   push('Your tabs',

@@ -154,8 +154,8 @@ var MANAGER_DECISION_ORDER = Object.freeze([
   'DECISION_HIRED',
   'DECISION_PUT_IN_DRAWER',
   // Group 2 — alternate / manual advance actions
+  // (DECISION_ADVANCE_PHONE retired 9/26/26 — no phone screen)
   'DECISION_REQUEST_PRESCREEN',
-  'DECISION_ADVANCE_PHONE',
   'DECISION_ADVANCE_WORKING',
   'DECISION_MAKE_OFFER',
   // Group 3 — exceptions & admin
@@ -285,7 +285,7 @@ var CFG_DEFAULTS = Object.freeze({
   DECISION_PUT_IN_DRAWER:               'Put in the Drawer',
   // Group 2 — alternate / manual advance actions
   DECISION_REQUEST_PRESCREEN:           'Request Pre-Screen (Required)',
-  DECISION_ADVANCE_PHONE:               'Send Phone Screen Booking',
+  DECISION_ADVANCE_PHONE:               '',   // RETIRED 9/26/26 — blank = not shown in the dropdown
   DECISION_ADVANCE_WORKING:             'Send Working Interview',
   DECISION_MAKE_OFFER:                  'Extend Offer',
   // Group 3 — exceptions & admin
@@ -315,7 +315,7 @@ var CFG_DEFAULTS = Object.freeze({
   // from the once-only guarantee): per-interview worksheets, per-booking
   // confirmations, etc. Internal manager-alert templates (keys starting with
   // "__") are always treated as repeatable. Comma-separated template keys.
-  EMAIL_REPEATABLE_TEMPLATES:           'interview_worksheet_dayof,phone_screen_confirmation',
+  EMAIL_REPEATABLE_TEMPLATES:           'interview_worksheet_dayof',
   AUTO_BOOKING_ENABLED:                 'TRUE',
   AUTO_REJECTION_ENABLED:               'TRUE',
   SEND_ACKNOWLEDGMENT_EMAIL:            'TRUE',
@@ -419,6 +419,9 @@ var CFG_DEFAULTS = Object.freeze({
   // sweep. Reopen still works from the Hiring Console "Closed" tab or by picking
   // "Reopen Candidate" on the Pipeline Archive tab.
   PIPELINE_ARCHIVE_ON_DECISION:         'TRUE',
+  // 9/26/26: a manual "Advance to Live Interview" never re-sends the invite within
+  // this many days of the last one (manual or automatic).
+  LIVE_INVITE_RESEND_DAYS:              '7',
   STUCK_CANDIDATE_DAYS:                 '5',
   REQUIRE_CONTACT_VERIFIED_FOR_BOOKING: 'FALSE',
   REFERENCE_CHECK_ENABLED:              'TRUE',

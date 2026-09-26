@@ -170,7 +170,7 @@ var GRADE_V2_PROMPT_BODY =
 '  "stated_experience_years": <number, best estimate from the payload, or -1 if not stated>,\n' +
 '  "strengths": ["<three specific strengths>"],\n' +
 '  "concerns": ["<three specific concerns>"],\n' +
-'  "recommended_next_step": "<Advance to phone screen | Manual review | Decline>",\n' +
+'  "recommended_next_step": "<Advance to live interview | Manual review | Decline>",\n' +
 '  "confidence_level": "<High|Medium|Low>",\n' +
 '  "ai_authored_likelihood": <0-100>,\n' +
 '  "ai_authored_reasoning": "<1-2 sentences>",\n' +

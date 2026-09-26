@@ -57,6 +57,7 @@ function getOrCreateSheet_(name, headers) {
     sh = ss.insertSheet(name);
   }
   if (headers && headers.length && sh.getLastRow() === 0) {
+    if (headers.length > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), headers.length - sh.getMaxColumns());
     sh.getRange(1, 1, 1, headers.length).setValues([headers]);
     sh.setFrozenRows(1);
     sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
@@ -73,6 +74,7 @@ function ensureHeaders_(sheet, headers) {
   if (!sheet) throw new Error('ensureHeaders_: sheet is null');
   var have = getHeaderRow_(sheet);
   if (!have.length) {
+    if (headers.length > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
@@ -85,6 +87,9 @@ function ensureHeaders_(sheet, headers) {
     if (haveLc.indexOf(String(h).trim().toLowerCase()) === -1) toAdd.push(h);
   });
   if (toAdd.length) {
+    // Grow the grid first — writing past the last column throws.
+    var need = have.length + toAdd.length - sheet.getMaxColumns();
+    if (need > 0) sheet.insertColumnsAfter(sheet.getMaxColumns(), need);
     sheet.getRange(1, have.length + 1, 1, toAdd.length).setValues([toAdd]);
     sheet.getRange(1, have.length + 1, 1, toAdd.length).setFontWeight('bold');
     _HEADER_CACHE[sheet.getName()] = null;

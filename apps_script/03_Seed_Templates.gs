@@ -72,57 +72,31 @@ var SEED_EMAIL_TEMPLATES = [
     'Notes': 'Manager decision "Request Pre-Screen (Required)". Sent when an applicant landed on the list from Indeed but has not filled out the pre-screen. Makes clear the pre-screen, not the Indeed application, is what gets them considered.'
   },
   {
-    'Template Key': 'phone_screen_booking',
-    'Subject':      'Let\'s talk about the {{RoleName}} role — pick a time',
-    'Body':
-'Hi {{CandidateFirstName}},\n\n' +
-'Based on your pre-screen, we would like to set up a short phone call with {{HiringManagerName}} for the {{RoleName}} role.\n\n' +
-'Pick a time here:\n{{BookingLink}}\n\n' +
-'What to expect: 15–20 minutes. We want to hear about you as a person — where you have been, what you are looking for, how you work, and what matters to you in a workplace. We will also answer any questions you have about the role, the team, and what day-to-day actually looks like here.\n\n' +
-'No tricks. No pressure. Just a real conversation.\n\n' +
-'{{ShopCustomerPromise}} The team behind that promise is who you would be joining — and that context matters when you are deciding where to work next.\n\n' +
-'Looking forward to talking,\n{{HiringManagerName}}\n{{HiringManagerTitle}} · {{ShopName}}\n{{CompanyPhone}}',
-    'Required Merge Fields': 'CandidateFirstName,RoleName,BookingLink,HiringManagerName,HiringManagerTitle,ShopName,ShopCustomerPromise,CompanyPhone',
-    'Notes': 'Candidate as a whole person, not just qualifications. Connects the role to the customer mission.'
-  },
-  {
-    'Template Key': 'phone_screen_confirmation',
-    'Subject':      'Phone screen confirmed — {{InterviewDate}}',
-    'Body':
-'Hi {{CandidateFirstName}},\n\n' +
-'You are confirmed for {{InterviewDate}} with {{HiringManagerName}}.\n\n' +
-'Meeting link: {{MeetLink}}\n\n' +
-'A few things that help: find a quiet spot, give yourself a few minutes on either side, and come with questions. This call goes both directions — we want you to leave knowing whether this is a place you genuinely want to work.\n\n' +
-'Need to reschedule? Just reply and we will take care of it.\n\n' +
-'Talk soon,\n{{HiringManagerName}}\n{{ShopName}} · {{CompanyPhone}}',
-    'Required Merge Fields': 'CandidateFirstName,InterviewDate,MeetLink,HiringManagerName,ShopName,CompanyPhone',
-    'Notes': ''
-  },
-  {
     'Template Key': 'full_interview_booking',
-    'Subject':      'Next step — in-person interview at {{ShopName}}',
+    'Subject':      'Next step — come meet us in person for the {{RoleName}} role',
     'Body':
 'Hi {{CandidateFirstName}},\n\n' +
-'We enjoyed our conversation and would like to invite you in for a full interview.\n\n' +
+'Your application for the {{RoleName}} role stood out, and we would like you to come in for an in-person interview.\n\n' +
 'Pick a time:\n{{FullInterviewLink}}\n\n' +
-'Where: {{InterviewLocation}}\nPlan for 45–60 minutes. You will meet {{HiringManagerName}}, walk the shop, and see the work firsthand — {{ShopSpecialties}}.\n\n' +
-'One thing worth saying plainly: {{ShopWhyWeHire}} This visit is as much about you evaluating us as it is about us evaluating you. Come with questions about the work, the team, the culture, the expectations, and what we offer in return. Long-term fit matters more to us than filling a seat quickly — and we want you making this decision with clear information.\n\n' +
+'Where: {{InterviewLocation}} (in person)\nPlan for about 45 minutes. You will meet {{HiringManagerName}}, walk the shop, and see the work firsthand — {{ShopSpecialties}}.\n\n' +
+'One thing worth saying plainly: {{ShopWhyWeHire}} This visit is as much about you evaluating us as it is about us evaluating you. Come with questions about the work, the team, the expectations, and what we offer in return.\n\n' +
+'If none of the open times work, just reply to this email and we will find one.\n\n' +
 'Looking forward to having you in,\n{{HiringManagerName}}\n{{ShopName}} · {{CompanyPhone}}',
-    'Required Merge Fields': 'CandidateFirstName,FullInterviewLink,InterviewLocation,HiringManagerName,ShopName,ShopSpecialties,ShopWhyWeHire,CompanyPhone',
-    'Notes': 'Mutual evaluation framing. Long-term fit over speed.'
+    'Required Merge Fields': 'CandidateFirstName,RoleName,FullInterviewLink,InterviewLocation,HiringManagerName,ShopName,ShopSpecialties,ShopWhyWeHire,CompanyPhone',
+    'Notes': 'Fallback live-interview invite (live_interview_booking is the primary). 9/26/26: removed "We enjoyed our conversation" — there is no phone screen, so there was no conversation yet.'
   },
   {
     'Template Key': 'reference_request_candidate',
-    'Subject':      'A quick ask — references for your {{RoleName}} application',
+    'Subject':      'Final step — references for your {{RoleName}} application (due {{ResponseDeadline}})',
     'Body':
 'Hi {{CandidateFirstName}},\n\n' +
-'You are progressing well in our process for the {{RoleName}} role. The next step is references.\n\n' +
-'Please share up to 3 — a former manager and two coworkers is ideal — using this form:\n{{CandRefFormLink}}\n\n' +
-'We keep these conversations short and respectful, typically 5–10 minutes each. We always tell your references upfront that this is a standard step, not a sign of concern.\n\n' +
-'{{ShopWhyWeHire}} References are one part of how we make sure the fit is real for both sides.\n\n' +
+'Thank you for coming in. You are in the final stage of our process for the {{RoleName}} role, and the last step is references.\n\n' +
+'Please share up to 3 (a former manager and two coworkers is ideal). Due {{ResponseDeadline}}:\n{{CandRefFormLink}}\n\n' +
+'We keep these conversations short and respectful, typically 5–10 minutes each, and we always tell your references upfront that this is a standard step, not a sign of concern.\n\n' +
+'{{ShopWhyWeHire}} As soon as your references are in, we make our final decision quickly — no long waits at the finish line.\n\n' +
 'Thanks for trusting us with this part of the process,\n{{HiringManagerName}}\n{{ShopName}}',
-    'Required Merge Fields': 'CandidateFirstName,RoleName,CandRefFormLink,HiringManagerName,ShopName,ShopWhyWeHire',
-    'Notes': ''
+    'Required Merge Fields': 'CandidateFirstName,RoleName,CandRefFormLink,ResponseDeadline,HiringManagerName,ShopName,ShopWhyWeHire',
+    'Notes': 'Sent when the manager picks "Request References" (after the live interview). References ONLY — culture fit is already scored from the combined pre-screen (9/26/26).'
   },
   {
     'Template Key': 'reference_check_reference',
@@ -137,51 +111,16 @@ var SEED_EMAIL_TEMPLATES = [
     'Notes': ''
   },
   {
-    'Template Key': 'culture_fit_invite',
-    'Subject':      'One more step before the final decision — {{ShopName}}',
-    'Body':
-'Hi {{CandidateFirstName}},\n\n' +
-'You are close. Before we wrap up, we ask every finalist to complete a short culture fit assessment:\n\n' +
-'{{CultureFormLink}}\n\n' +
-'Why this matters: {{ShopCustomerPromise}} Every person on our team either reinforces or undermines that promise in their day-to-day interactions — with customers, with teammates, and with us. {{ShopWhyWeHire}}\n\n' +
-'The questions are straightforward — about how you handle accountability, how you work with others, what you expect from leadership, and what you bring to a team. Answer honestly. We are not looking for the right answers. We are looking for the real ones.\n\n' +
-'{{ShopTeamMessage}}\n\n' +
-'Thanks for the time,\n{{HiringManagerName}}\n{{ShopName}}',
-    'Required Merge Fields': 'CandidateFirstName,RoleName,CultureFormLink,HiringManagerName,ShopName,ShopCustomerPromise,ShopWhyWeHire,ShopTeamMessage',
-    'Notes': 'Connects culture assessment to customer experience, not just internal fit. NOTE: by default this is sent COMBINED with the reference ask via reference_and_culture_invite — this standalone template is the fallback when REFERENCE_CULTURE_COMBINED_EMAIL_ENABLED=FALSE.'
-  },
-  {
-    'Template Key': 'reference_and_culture_invite',
-    'Subject':      'Two quick steps for your {{RoleName}} application — due {{ResponseDeadline}}',
-    'Body':
-'Hi {{CandidateFirstName}},\n\n' +
-'Your live interview went well and you are now in the final stage of our process for the {{RoleName}} role. There are just two short steps left, and you can knock both out in about 15 minutes.\n\n' +
-'Please complete BOTH of the following by {{ResponseDeadline}} (within the next 48–72 hours):\n\n' +
-'1) References — share up to 3 (a former manager and two coworkers is ideal):\n   {{CandRefFormLink}}\n\n' +
-'2) Culture Fit assessment — a few honest questions about how you work:\n   {{CultureFormLink}}\n\n' +
-'A little context so neither step feels like a black box:\n\n' +
-'• On references: we keep these conversations short and respectful, typically 5–10 minutes each, and we always tell your references upfront that this is a standard step, not a sign of concern. {{ShopWhyWeHire}}\n\n' +
-'• On the culture fit: {{ShopCustomerPromise}} The questions are about accountability, how you work with others, and what you expect from leadership. Answer honestly — we are not looking for the right answers, we are looking for the real ones.\n\n' +
-'Completing both by {{ResponseDeadline}} keeps your application moving without delay. As soon as we have them, we make our final decision quickly — no long waits at the finish line.\n\n' +
-'{{ShopTeamMessage}}\n\n' +
-'Thanks for trusting us with this part of the process,\n{{HiringManagerName}}\n{{ShopName}}',
-    'Required Merge Fields': 'CandidateFirstName,RoleName,CandRefFormLink,CultureFormLink,ResponseDeadline,HiringManagerName,ShopName,ShopWhyWeHire,ShopCustomerPromise,ShopTeamMessage',
-    'Notes': 'COMBINED references + culture-fit ask sent when the manager picks "Request References". One email, both forms, one 48–72h deadline. Sent by 16_Dropdown_Actions.gs _dispatchRequestReferences_.'
-  },
-  {
     'Template Key': 'reference_culture_reminder',
-    'Subject':      'Friendly reminder — 2 quick steps for your {{RoleName}} application (due {{ResponseDeadline}})',
+    'Subject':      'Friendly reminder — references for your {{RoleName}} application (due {{ResponseDeadline}})',
     'Body':
 'Hi {{CandidateFirstName}},\n\n' +
-'Just a quick, friendly nudge — we have not seen your two final steps come through yet, and the window closes {{ResponseDeadline}}.\n\n' +
-'It only takes about 15 minutes total:\n\n' +
-'1) References — share up to 3:\n   {{CandRefFormLink}}\n\n' +
-'2) Culture Fit assessment:\n   {{CultureFormLink}}\n\n' +
-'If you have already submitted one of these, thank you — just complete the other and you are all set. Finishing both keeps your application on track for a fast final decision.\n\n' +
-'If something has changed or you have questions, just reply to this email — a real person will read it.\n\n' +
+'Just a quick, friendly nudge — we have not seen your references come through yet, and the window closes {{ResponseDeadline}}.\n\n' +
+'It only takes a few minutes:\n{{CandRefFormLink}}\n\n' +
+'Finishing this keeps your application on track for a fast final decision. If something has changed or you have questions, just reply to this email — a real person will read it.\n\n' +
 'Thanks,\n{{HiringManagerName}}\n{{ShopName}}',
-    'Required Merge Fields': 'CandidateFirstName,RoleName,CandRefFormLink,CultureFormLink,ResponseDeadline,HiringManagerName,ShopName',
-    'Notes': 'Single gentle reminder sent ~REFERENCE_REMINDER_HOURS_BEFORE the references/culture deadline when the candidate has not submitted. Sent by 38_Reference_Reminders.gs.'
+    'Required Merge Fields': 'CandidateFirstName,RoleName,CandRefFormLink,ResponseDeadline,HiringManagerName,ShopName',
+    'Notes': 'Single reminder before the references deadline (38_Reference_Reminders.gs). Key name kept for compatibility; references only since 9/26/26.'
   },
   {
     'Template Key': 'working_interview_invitation',
@@ -260,21 +199,6 @@ var SEED_EMAIL_TEMPLATES = [
     'Notes': 'Sets the tone for day one. Mission-forward, not just congratulatory.'
   },
   {
-    'Template Key': 'technician_post_prescreen',
-    'Subject':      'Two steps to move forward — {{RoleName}} at {{ShopName}}',
-    'Body':
-'Hi {{CandidateFirstName}},\n\n' +
-'Thanks for completing the pre-screen. To move your Technician application forward, please complete BOTH of the following before your phone screen:\n\n' +
-'1) Book your phone screen with {{HiringManagerName}}:\n   {{BookingLink}}\n\n' +
-'2) Complete the Technician Skill Level Test (~20 minutes):\n   {{SkillsTestLink}}\n\n' +
-'Why both: the skill test helps us understand your real-world experience — the systems you know, the tools you use, the work you have actually done. That way we can use the phone screen to talk about the role, the shop, and what you are looking for, not spend it on basics we could have learned beforehand.\n\n' +
-'Please complete the test on your own. We are not looking for perfect answers — we are looking for honest ones. That standard reflects how we operate across everything we do here.\n\n' +
-'We specialize in {{ShopSpecialties}}. {{ShopPerksLine}}\n\n' +
-'Looking forward to talking,\n{{HiringManagerName}}\n{{HiringManagerTitle}} · {{ShopName}}',
-    'Required Merge Fields': 'CandidateFirstName,RoleName,ShopName,HiringManagerName,HiringManagerTitle,BookingLink,SkillsTestLink,ShopSpecialties,ShopPerksLine',
-    'Notes': 'Explains the why behind both steps. Honesty standard mirrors shop values.'
-  },
-  {
     'Template Key': 'interview_worksheet_dayof',
     'Subject':      'Interview today — {{CandidateName}} ({{RoleName}}) at {{InterviewDate}}',
     'Body':         '{{WorksheetBody}}',
@@ -292,7 +216,7 @@ var SEED_EMAIL_TEMPLATES = [
 'Whatever the outcome, we take this process seriously and we will not leave you hanging.\n\n' +
 'Talk soon,\n{{CompanySignatureName}}\n{{ShopName}} · {{CompanyPhone}}',
     'Required Merge Fields': 'CandidateFirstName,SLADays,ShopMission,ShopName,CompanyPhone,CompanySignatureName',
-    'Notes': 'Sent after phone screen or full interview transcript is graded. Sets SLA expectation; reinforces mission. Disable via POST_INTERVIEW_THANKYOU_ENABLED=FALSE.'
+    'Notes': 'Sent after the live interview transcript is graded. Sets SLA expectation; reinforces mission. Disable via POST_INTERVIEW_THANKYOU_ENABLED=FALSE.'
   },
   {
     'Template Key': 'reference_received_confirmation',

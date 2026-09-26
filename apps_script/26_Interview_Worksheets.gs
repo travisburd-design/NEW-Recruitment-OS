@@ -632,8 +632,7 @@ function _postInterviewChecklist_(interviewType) {
     '□  Open the Interview Pipeline tab in the Recruiting OS spreadsheet.',
     '□  Find this candidate\'s row.',
     '□  Set the "Manager Decision" dropdown to reflect your decision:',
-    '        Send Phone Screen Booking  → advance to phone screen',
-    '        Advance to Live Interview  → phone screen went well, invite in person',
+    '        Advance to Live Interview  → invite in person (pre-screen cleared the bar)',
     '        Send Working Interview     → live interview went well, ready for working eval',
     '        Make Offer                 → working interview went well, ready to hire',
     '        Needs More Info            → not sure yet — sends candidate a "still reviewing" note',
@@ -1739,7 +1738,10 @@ function _findCandidateByName_(fullName) {
 function _guessTypeFromTitle_(title) {
   var lc = (title || '').toLowerCase();
   if (lc.indexOf('working') !== -1) return 'Working Interview (in-person)';
-  if (lc.indexOf('phone') !== -1 || lc.indexOf('screen') !== -1) return 'Phone Screen (online)';
+  // 9/26/26: phone screen retired — Koalendar titles can still say "Phone Screen"
+  // on a live-interview booking, so the title no longer decides it.
+  if (!CFG.getBool('PHONE_SCREEN_RETIRED', true) &&
+      (lc.indexOf('phone') !== -1 || lc.indexOf('screen') !== -1)) return 'Phone Screen (online)';
   // Generic "Interview — Name" with no qualifier → treat as live in-person
   return 'Live Interview (in-person)';
 }

@@ -1122,7 +1122,9 @@ function showInterviewPipelineColumns() {
 var GM_PIPELINE_KEEP_COLUMNS = [
   'First Name', 'Last Name', 'Role', 'Pre-Screen Score', 'Risk Score',
   'Final Recommendation', 'Manager Decision', 'Rejection Reason',
-  'Status', 'Next Action Due', 'Last Updated', 'Notes'
+  'Status', 'Next Action Due', 'Last Updated', 'Notes',
+  // 9/26/26 — decide on more than a score
+  'Decision Snapshot', 'Pre-Screen Answers', 'Resume'
 ];
 
 /**

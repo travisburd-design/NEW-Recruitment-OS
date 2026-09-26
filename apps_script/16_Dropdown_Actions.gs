@@ -14,13 +14,16 @@
  *
  * Decision → action map (values pulled live from Config DECISION_* keys):
  *
- *   Advance to Live Interview → queue full_interview_booking email →
- *                                Status=FULL_BOOKED
+ *   Advance to Live Interview → queue the live-interview invite (same email the
+ *                                automatic advance sends) → Status=AUTO_BOOK_SENT
+ *                                ("invited, awaiting booking"). The calendar poll
+ *                                moves it to FULL_BOOKED when they actually book.
+ *                                Never sends twice within LIVE_INVITE_RESEND_DAYS.
  *   Send Working Interview    → queue working_interview_invitation →
  *                                Status=WORKING_SCHEDULED
- *   Request References        → queue reference_and_culture_invite (BOTH the
- *                                reference-submission form and the culture-fit
- *                                form in one email, 48–72h deadline) →
+ *   Request References        → queue reference_request_candidate (references
+ *                                only — culture fit is already scored from the
+ *                                combined pre-screen), 48–72h deadline →
  *                                Status=REFS_REQUESTED. Everything after this is
  *                                unattended (referee emails, AI grading, grand
  *                                total, leadership report card).
@@ -197,6 +200,7 @@ function _decisionToAction_(value) {
   if (s === CFG.get('DECISION_MAKE_OFFER'))      return 'MAKE_OFFER';
   if (s === 'Make Offer')                        return 'MAKE_OFFER';    // legacy label alias
   if (s === 'Mark as Hired')                     return 'HIRED';         // legacy label alias
+  if (s === 'Send Phone Screen Booking')         return 'ADVANCE_LIVE';  // 9/26/26: phone screen retired
   if (s === CFG.get('DECISION_NEEDS_INFO'))      return 'NEEDS_INFO';
   if (s === CFG.get('DECISION_PUT_IN_DRAWER'))   return 'PUT_IN_DRAWER';
   if (s === CFG.get('DECISION_REJECT'))          return 'REJECT';
@@ -212,29 +216,50 @@ function _decisionToAction_(value) {
 // INDIVIDUAL DISPATCH HANDLERS
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * RETIRED 9/26/26 — there is no phone screen. The pre-screen is graded and a
+ * qualifying candidate goes straight to the in-person live interview. Any old
+ * "Send Phone Screen Booking" value is treated as "Advance to Live Interview".
+ */
 function _dispatchAdvancePhone_(candidateId, candidate) {
-  // Mirror the auto-routing logic: Technicians get the combined
-  // phone-screen-booking + skills-test invite; everyone else gets the plain
-  // phone-screen booking.
-  var role = String(candidate['Role'] || '').trim();
-  var template = (role === 'Technician') ? 'technician_post_prescreen' : 'phone_screen_booking';
-  sendTemplatedEmail_(template, candidate['Email'], candidateId, null, {
-    reason: 'manager decision: send phone screen booking'
-  });
-  _setBothStatuses_(candidateId, STATUS.AUTO_BOOK_SENT,
-    'Phone screen booking sent (' + template + '): ' + shopDateTime_(),
-    { 'Phone Screen Link Sent': shopDateTime_() });
-  return { action: 'ADVANCE_PHONE', emailQueued: true, template: template };
+  logEvent_('PHONE_SCREEN_RETIRED_REDIRECT', candidateId, { to: 'ADVANCE_LIVE' });
+  return _dispatchAdvanceLive_(candidateId, candidate);
 }
 
+/**
+ * Advance to Live Interview (manual). Sends the SAME invite the automatic advance
+ * sends, never twice: if a live invite already went out within
+ * LIVE_INVITE_RESEND_DAYS (default 7) nothing is sent and the manager is told when.
+ * Status becomes AUTO_BOOK_SENT ("invited, awaiting booking") — NOT FULL_BOOKED —
+ * so the calendar poll can promote it when they book (booking alert, day-of
+ * worksheet, Booking Events row) and the no-booking reminder / close applies.
+ */
 function _dispatchAdvanceLive_(candidateId, candidate) {
-  sendTemplatedEmail_('full_interview_booking', candidate['Email'], candidateId, null, {
-    reason: 'manager decision: advance to live interview'
+  var already = (typeof LIVEADV_lastInviteSent_ === 'function') ? LIVEADV_lastInviteSent_(candidateId, candidate) : '';
+  if (already) {
+    var m = String(already).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    var sent = m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : _coerceDate_(already);
+    // Unreadable date → treat as recent (never double-send on a guess).
+    var days = (sent && sent.getTime() > 0) ? (Date.now() - sent.getTime()) / 86400000 : 0;
+    if (days < CFG.getInt('LIVE_INVITE_RESEND_DAYS', 7)) {
+      var msg = 'Live interview invite already sent ' + already + ' — not sent again.';
+      logEvent_('LIVE_INVITE_DUPLICATE_BLOCKED', candidateId, { sentAt: already });
+      toast_(msg, 'Recruiting OS', 8);
+      return { action: 'ADVANCE_LIVE', emailQueued: false, reason: 'invite already sent ' + already };
+    }
+  }
+  var tpl = (typeof LIVEADV_templateFor_ === 'function') ? LIVEADV_templateFor_(candidate['Role']) : 'full_interview_booking';
+  sendTemplatedEmail_(tpl, candidate['Email'], candidateId, null, {
+    reason: 'manager decision: advance to live interview' + (already ? ' (re-invite, last sent ' + already + ')' : '')
   });
-  _setBothStatuses_(candidateId, STATUS.FULL_BOOKED,
-    'Full Interview link sent: ' + shopDateTime_(),
-    { 'Full Interview Link Sent': shopDateTime_() });
-  return { action: 'ADVANCE_LIVE', emailQueued: true };
+  var stamp = shopDateTime_();
+  _setBothStatuses_(candidateId, STATUS.AUTO_BOOK_SENT,
+    'Live interview invite sent (manager): ' + stamp + ' — awaiting candidate booking',
+    { 'Full Interview Link Sent': stamp, 'Live Link Sent': stamp });
+  if (typeof LIVEADV_recordManualRelease_ === 'function') {
+    safeRun_('_dispatchAdvanceLive_:queue', function () { LIVEADV_recordManualRelease_(candidateId, candidate, tpl); });
+  }
+  return { action: 'ADVANCE_LIVE', emailQueued: true, template: tpl };
 }
 
 function _dispatchAdvanceWorking_(candidateId, candidate) {
@@ -257,33 +282,22 @@ function _dispatchAdvanceWorking_(candidateId, candidate) {
  * remaining action is Hire ("Mark as Hired") or Not Hire ("Put in the Drawer").
  */
 function _dispatchRequestReferences_(candidateId, candidate) {
+  // 9/26/26: references ONLY. Culture fit is part of the combined pre-screen and
+  // already scored (Culture Fit Score) — there is no separate culture form to fill out.
   var deadline = _referenceCultureDeadline_();
-  var combined = CFG.getBool('REFERENCE_CULTURE_COMBINED_EMAIL_ENABLED', true);
-
-  if (combined) {
-    sendTemplatedEmail_('reference_and_culture_invite', candidate['Email'], candidateId, {
-      ResponseDeadline: deadline.label
-    }, {
-      reason: 'manager decision: request references + culture fit (combined)'
-    });
-  } else {
-    // Fallback: two separate emails (legacy templates).
-    sendTemplatedEmail_('reference_request_candidate', candidate['Email'], candidateId, null, {
-      reason: 'manager decision: request references (standalone)'
-    });
-    if (typeof sendCultureInvite_ === 'function') {
-      safeRun_('_dispatchRequestReferences_:culture', function () { sendCultureInvite_(candidateId); });
-    }
-  }
-
+  sendTemplatedEmail_('reference_request_candidate', candidate['Email'], candidateId, {
+    ResponseDeadline: deadline.label
+  }, {
+    reason: 'manager decision: request references'
+  });
   _setBothStatuses_(candidateId, STATUS.REFS_REQUESTED,
-    'References + culture fit requested — due ' + deadline.label + ' (' + (combined ? 'combined email' : 'two emails') + '): ' + shopDateTime_(),
+    'References requested — due ' + deadline.label + ': ' + shopDateTime_(),
     {
       'Next Action Due':         deadline.label,
       'Reference Deadline':      shopDateTime_(deadline.at), // parseable — drives the reminder
       'Reference Reminder Sent': ''                          // reset guard for a fresh request
     });
-  return { action: 'REQUEST_REFS', emailQueued: true, combined: combined, deadline: deadline.label };
+  return { action: 'REQUEST_REFS', emailQueued: true, deadline: deadline.label };
 }
 
 /**
@@ -629,7 +643,7 @@ function DROPDOWN_selfTest() {
   var out = ['[DROPDOWN] selfTest (read-only)…'];
 
   // 1) Verify every DECISION_* key maps to an action
-  var keys = ['DECISION_ADVANCE_PHONE', 'DECISION_ADVANCE_LIVE', 'DECISION_ADVANCE_WORKING',
+  var keys = ['DECISION_ADVANCE_LIVE', 'DECISION_ADVANCE_WORKING',
               'DECISION_REQUEST_REFERENCES', 'DECISION_MAKE_OFFER', 'DECISION_NEEDS_INFO',
               'DECISION_PUT_IN_DRAWER', 'DECISION_REJECT', 'DECISION_ARCHIVE',
               'DECISION_REOPEN', 'DECISION_HIRED', 'DECISION_REQUEST_PRESCREEN'];

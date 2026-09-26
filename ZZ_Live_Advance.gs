@@ -80,7 +80,7 @@ var LIVEADV_CFG_DEFAULTS = Object.freeze({
   LIVE_ADVANCE_NO_BOOKING_REMINDER_DAYS: '5',      // working days
   LIVE_ADVANCE_NO_BOOKING_CLOSE_DAYS:    '10',     // working days
   LIVE_ADVANCE_TEMPLATE:                 'live_interview_booking',
-  LIVE_ADVANCE_TEMPLATE_TECH:            'live_interview_booking_technician',
+  LIVE_ADVANCE_TEMPLATE_TECH:            'live_interview_booking',   // 9/26/26: same invite for every role
   LIVE_ADVANCE_REMINDER_TEMPLATE:        'live_interview_booking_reminder',
   LIVE_ADVANCE_CLOSE_TEMPLATE:           'live_interview_no_response_close',
   LIVE_ADVANCE_FORM_QUESTIONS_PER_ROLE:  '5'       // top-weighted questions inserted per role section
@@ -116,17 +116,13 @@ function _dispatchPostScoringEmails_(candidateId, candidate, score, risk, routin
       LIVEADV_queue_(candidateId, candidate, score, risk);
       return;
     }
-    // ── Legacy phone-screen path (unchanged) ──
-    var role = candidate['Role'];
-    if (role === 'Technician' && score >= CFG.getInt('TECH_SKILL_TEST_MIN_SCORE', 60)) {
-      sendTemplatedEmail_('technician_post_prescreen', candidate['Email'], candidateId, null, {
-        reason: 'auto-book + skill test (technician, score=' + score + ')'
-      });
-    } else {
-      sendTemplatedEmail_('phone_screen_booking', candidate['Email'], candidateId, null, {
-        reason: 'auto-book (score=' + score + ', risk=' + risk + ')'
-      });
-    }
+    // 9/26/26 — the phone screen is RETIRED. With the live-advance switch off, a
+    // qualifying candidate is held for the manager (no phone-screen email, ever).
+    // The manager advances them with one click ("Advance to Live Interview").
+    _setBothStatuses_(candidateId, STATUS.MANUAL_REVIEW,
+      'Pre-screen cleared the bar (score ' + score + ', risk ' + risk + ') — ready for "Advance to Live Interview". ' +
+      'Auto-advance is off (LIVE_ADVANCE_ENABLED=FALSE). ' + shopDateTime_());
+    logEvent_('QUALIFIED_AWAITING_MANAGER', candidateId, { score: score, risk: risk, reason: 'LIVE_ADVANCE_ENABLED=FALSE; phone screen retired' });
   } else if (routing.action === 'HARD_REJECT') {
     if (!CFG.getBool('AUTO_REJECTION_ENABLED', true)) {
       logEvent_('EMAIL_SKIPPED', candidateId, { reason: 'AUTO_REJECTION_ENABLED=FALSE', wouldHaveSent: 'gracious_decline', score: score });
@@ -255,6 +251,16 @@ function LIVEADV_queue_(candidateId, candidate, score, risk) {
 // ─────────────────────────────────────────────────────────────────────────────
 function LIVEADV_run() {
   if (typeof _triggerHeartbeat_ === 'function') _triggerHeartbeat_('LIVEADV_run', 'OK');
+  // 9/26/26: the 15-minute tick also refreshes the Interview Pipeline decision
+  // snapshot (54_Pipeline_Snapshot.gs). Runs after — never inside — the lock.
+  var result = LIVEADV_runCore_();
+  if (typeof PIPELINE_refreshDecisionSnapshots === 'function') {
+    safeRun_('LIVEADV_run:snapshots', function () { PIPELINE_refreshDecisionSnapshots(); });
+  }
+  return result;
+}
+
+function LIVEADV_runCore_() {
   if (!CFG.getBool('LIVE_ADVANCE_ENABLED', false)) {
     logEvent_('LIVEADV_SKIPPED', '', 'LIVE_ADVANCE_ENABLED=FALSE');
     return '[LIVEADV] disabled';
@@ -415,10 +421,53 @@ function LIVEADV_releasedTodayCount_(data, cStatus, cRelAt) {
 
 /** Technicians get the variant that also carries the skills test link. Falls back to the stock template if the seeded one is missing. */
 function LIVEADV_templateFor_(role) {
-  var isTech = /technician/i.test(role || '') && !/lube/i.test(role || '');
-  var key = isTech ? CFG.get('LIVE_ADVANCE_TEMPLATE_TECH', 'live_interview_booking_technician')
-                   : CFG.get('LIVE_ADVANCE_TEMPLATE', 'live_interview_booking');
+  // 9/26/26: ONE live-interview invite for every role. The technician variant
+  // pointed to the separate Technician Skill Level Test, which was retired 9/9/26
+  // — the technician scenarios are now inside the combined pre-screen.
+  var key = CFG.get('LIVE_ADVANCE_TEMPLATE', 'live_interview_booking');
+  if (key === 'live_interview_booking_technician') key = 'live_interview_booking';
   return LIVEADV_templateExists_(key) ? key : 'full_interview_booking';
+}
+
+/**
+ * 9/26/26 — used by the manual "Advance to Live Interview" decision so a manual
+ * invite and the automatic one are the same thing:
+ *   • returns the date a live invite was already sent (to stop duplicates), or ''
+ *   • after a manual send, records a RELEASED row so the no-booking reminder and
+ *     honest close apply to manual invites too.
+ */
+function LIVEADV_lastInviteSent_(candidateId, candidate) {
+  candidate = candidate || {};
+  var v = candidate['Live Link Sent'] || candidate['Full Interview Link Sent'] || '';
+  if (!v) {
+    var ip = getSheetOrNull_(SHEETS.INTERVIEW_PIPELINE);
+    var hit = ip ? findRowsByColumnValue_(ip, 'Candidate ID', candidateId) : [];
+    if (hit.length) v = hit[0].data['Live Link Sent'] || hit[0].data['Full Interview Link Sent'] || '';
+  }
+  if (!v) {
+    var q = getSheetOrNull_(LIVEADV_SHEET);
+    if (q) findRowsByColumnValue_(q, 'Candidate ID', candidateId).forEach(function (h) {
+      if (String(h.data['Status'] || '').toUpperCase() === 'RELEASED' && h.data['Released At']) v = h.data['Released At'];
+    });
+  }
+  return v ? String(v instanceof Date ? shopDateTime_(v) : v) : '';
+}
+
+function LIVEADV_recordManualRelease_(candidateId, candidate, tpl) {
+  var q = getOrCreateSheet_(LIVEADV_SHEET, LIVEADV_HEADERS);
+  ensureHeaders_(q, LIVEADV_HEADERS);
+  var stamp = shopDateTime_();
+  var hits = findRowsByColumnValue_(q, 'Candidate ID', candidateId);
+  var pending = hits.filter(function (h) { return String(h.data['Status'] || '').toUpperCase() === 'PENDING'; })[0];
+  var rec = { 'Status': 'RELEASED', 'Released At': stamp, 'Notes': 'Sent ' + tpl + ' ' + stamp + ' (manual: Advance to Live Interview)' };
+  if (pending) { batchUpdateRow_(q, pending.rowNum, rec); return; }
+  appendRowByHeader_(q, {
+    'Queued At': stamp, 'Candidate ID': candidateId, 'Full Name': LIVEADV_name_(candidate),
+    'Role': String(candidate['Role'] || ''), 'Prescreen Score': candidate['Pre-Screen Score'] || candidate['AI Score'] || '',
+    'Risk Score': candidate['Risk Score'] || '', 'Release At': stamp, 'Release Ms': Date.now(),
+    'Status': 'RELEASED', 'Released At': stamp, 'Reason': 'Manager decision: Advance to Live Interview',
+    'Notes': rec['Notes']
+  });
 }
 
 function LIVEADV_templateExists_(key) {
@@ -455,7 +504,9 @@ function LIVEADV_sweepUnbooked_() {
     if (!cand) continue;
     // Anything other than "link sent, nothing since" means they booked or the manager acted.
     if (String(cand['Status'] || '').toUpperCase() !== String(STATUS.AUTO_BOOK_SENT).toUpperCase()) continue;
-    if (String(cand['Decision'] || cand['Manager Decision'] || '').trim()) continue;
+    var dec = String(cand['Decision'] || cand['Manager Decision'] || '').trim();
+    // A manual "Advance to Live Interview" is the same invite — keep following up on it.
+    if (dec && (typeof _decisionToAction_ !== 'function' || _decisionToAction_(dec) !== 'ADVANCE_LIVE')) continue;
 
     var wd = LIVEADV_workingDaysSince_(sentAt);
     var notes = String(data[i][cNotes] || '');
@@ -646,28 +697,12 @@ function LIVEADV_seedTemplates_() {
         'Hi {{CandidateFirstName}},\n\n' +
         'A quick, honest update: your application for the {{RoleName}} role stood out, and we would like to skip the phone tag and have you come in for a real conversation.\n\n' +
         'Pick a time that works for you:\n{{FullInterviewLink}}\n\n' +
-        'Where: {{InterviewLocation}}\nPlan for 45–60 minutes. You will meet {{HiringManagerName}}, walk the shop, and see the work firsthand — {{ShopSpecialties}}.\n\n' +
+        'Where: {{InterviewLocation}} (in person)\nPlan for about 45 minutes. You will meet {{HiringManagerName}}, walk the shop, and see the work firsthand — {{ShopSpecialties}}.\n\n' +
         'One thing worth saying plainly: {{ShopWhyWeHire}} This visit is as much about you evaluating us as it is about us evaluating you. Come with questions about the work, the team, the expectations, and what we offer in return. Long-term fit matters more to us than filling a seat quickly.\n\n' +
         'If none of the open times work, just reply to this email and we will find one.\n\n' +
         'Looking forward to having you in,\n{{HiringManagerName}}\n{{HiringManagerTitle}} · {{ShopName}}\n{{CompanyPhone}}',
       'Required Merge Fields': 'CandidateFirstName,RoleName,FullInterviewLink,InterviewLocation,HiringManagerName,HiringManagerTitle,ShopName,ShopSpecialties,ShopWhyWeHire,CompanyPhone',
       'Notes': 'Option A (9/17/26): sent automatically when the pre-screen clears the role bar. Replaces the phone-screen booking email. Sent by ZZ_Live_Advance.gs.'
-    },
-    {
-      'Template Key': 'live_interview_booking_technician',
-      'Subject':      'Two steps to move forward — Technician at {{ShopName}}',
-      'Body':
-        'Hi {{CandidateFirstName}},\n\n' +
-        'A quick, honest update: your application stood out, and we would like to have you come in and meet us in person. To move your Technician application forward, please do BOTH of the following:\n\n' +
-        '1) Book your in-person interview with {{HiringManagerName}}:\n   {{FullInterviewLink}}\n\n' +
-        '2) Complete the Technician Skill Level Test before you come in (~20 minutes):\n   {{SkillsTestLink}}\n\n' +
-        'Why both: the skill test tells us about the systems you know, the tools you use, and the work you have actually done — so the interview can be about the role, the shop, and what you are looking for, not the basics.\n\n' +
-        'Please complete the test on your own. We are not looking for perfect answers — we are looking for honest ones. That standard reflects how we operate across everything we do here.\n\n' +
-        'Where: {{InterviewLocation}}\nPlan for 45–60 minutes. You will walk the shop and see the work firsthand — {{ShopSpecialties}}. {{ShopPerksLine}}\n\n' +
-        'If none of the open times work, just reply to this email and we will find one.\n\n' +
-        'Looking forward to having you in,\n{{HiringManagerName}}\n{{HiringManagerTitle}} · {{ShopName}}\n{{CompanyPhone}}',
-      'Required Merge Fields': 'CandidateFirstName,RoleName,FullInterviewLink,SkillsTestLink,InterviewLocation,HiringManagerName,HiringManagerTitle,ShopName,ShopSpecialties,ShopPerksLine,CompanyPhone',
-      'Notes': 'Option A (9/17/26): technician variant — live interview link + skills test in one email. Replaces technician_post_prescreen. Sent by ZZ_Live_Advance.gs.'
     },
     {
       'Template Key': 'live_interview_booking_reminder',
@@ -998,10 +1033,15 @@ function pollCalendarBookings() {
         // ZZ_Live_Advance: Koalendar titles are "Name & Travis Burd" — the booking type only appears
         // in the description (event slug). Fold a hint into lcTitle so the existing checks work.
         try { lcTitle += ' ' + LIVEADV_phaseHint_(ev); } catch (e) {}
-        var phase = 'PhoneScreen';
+        // 9/26/26: the phone screen is retired, so an unlabelled booking is the live
+        // interview. Only a booking made through the OLD phone-screen Koalendar page
+        // (slug contains "phone-screen") is still treated as a phone screen.
+        var phase = 'FullInterview';
+        var lcDesc = String(ev.getDescription ? (ev.getDescription() || '') : '').toLowerCase();
         if (lcTitle.indexOf('full') !== -1 || lcTitle.indexOf('in-person') !== -1 ||
             lcTitle.indexOf('in person') !== -1) phase = 'FullInterview';
         else if (lcTitle.indexOf('working') !== -1) phase = 'WorkingInterview';
+        else if (lcDesc.indexOf('/e/candidate-phone-screen') !== -1) phase = 'PhoneScreen';
 
         // Check if already booked at this status (idempotent)
         var hits = ip ? findRowsByColumnValue_(ip, 'Candidate ID', matchedCid) : [];
@@ -1112,7 +1152,7 @@ function LIVEADV_selfTest() {
   out.push('  ' + (LIVEADV_promptIsV2_() ? '✓' : '✗') + ' prescreen prompt is V2 (not the v1 seed body)');
   var q = getSheetOrNull_(LIVEADV_SHEET);
   out.push('  ' + (q ? '✓' : '✗') + ' "' + LIVEADV_SHEET + '" tab ' + (q ? 'present (' + Math.max(0, q.getLastRow() - 1) + ' rows)' : 'missing — run LIVEADV_install()'));
-  ['live_interview_booking', 'live_interview_booking_technician', 'live_interview_booking_reminder', 'live_interview_no_response_close']
+  ['live_interview_booking', 'live_interview_booking_reminder', 'live_interview_no_response_close']
     .forEach(function (k) { out.push('  ' + (LIVEADV_templateExists_(k) ? '✓' : '✗') + ' template ' + k); });
   var installed = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'LIVEADV_run'; });
   out.push('  ' + (installed ? '✓' : '✗') + ' LIVEADV_run trigger ' + (installed ? 'installed' : 'NOT installed — LIVEADV_installTrigger() after approval'));

@@ -118,7 +118,7 @@ function buildGmQuickStart() {
 
         ['3.  The 3 decisions you\'ll use most',
          '①  ' + dec('DECISION_ADVANCE_LIVE', 'Advance to Live Interview') + ' — invites them to book the live interview.\n' +
-         '②  ' + dec('DECISION_REQUEST_REFERENCES', 'Request References') + ' — sends references + culture-fit forms; the rest runs unattended.\n' +
+         '②  ' + dec('DECISION_REQUEST_REFERENCES', 'Request References') + ' — after the live interview: asks for references only. Culture fit is already scored from the pre-screen. The rest runs unattended.\n' +
          '③  ' + dec('DECISION_HIRED', 'Confirm Hire') + ' — congratulations email + onboarding checklist.\n' +
          '     …or ' + dec('DECISION_PUT_IN_DRAWER', 'Put in the Drawer') + ' to keep them warm without hiring.'],
 
@@ -127,7 +127,7 @@ function buildGmQuickStart() {
          'cancellable — reopening cancels the pending email before it ever sends.'],
 
         ['Other choices (rarely needed)',
-         dec('DECISION_ADVANCE_PHONE', 'Send Phone Screen Booking') + ', ' +
+         dec('DECISION_REQUEST_PRESCREEN', 'Request Pre-Screen (Required)') + ', ' +
          dec('DECISION_ADVANCE_WORKING', 'Send Working Interview') + ', ' +
          dec('DECISION_MAKE_OFFER', 'Extend Offer') + ', ' +
          dec('DECISION_NEEDS_INFO', 'Needs More Info') + ', ' +
@@ -193,7 +193,7 @@ function buildManualSections_() {
     "'Form Responses' tab the live form writes to (currently Form Responses 6), and a daily 6 AM repair catches any " +
     "application that did not make it in. A form submit writes a row to " +
     "'All Candidates', the candidate is AI-scored (fit + risk), and routing decides what happens next: " +
-    "auto-book a phone screen, hold for manual review, or send a gracious decline. From there the manager works " +
+    "invite them to the in-person live interview, hold for manual review, or send a gracious decline. From there the manager works " +
     "candidates through the 'Interview Pipeline' tab using ONE control — the 'Manager Decision' dropdown. " +
     "Status values are written by the script (column Status), never typed by hand. " +
     "SAFETY: no candidate-facing email can leave unless SYSTEM_MODE=LIVE AND SEND_ENABLED=TRUE; in TEST mode " +
@@ -212,7 +212,7 @@ function buildManualSections_() {
     'PRESCREEN_SENT — pre-screen invite emailed (e.g. an imported Indeed/ACT lead).',
     'PRESCREEN_RECEIVED — the candidate submitted the Pre-Screen Form.',
     'SCORED — AI Score / Risk Score / Total Score written by scorePreScreen_; routing decided.',
-    'AUTO_BOOK_SENT → PHONE_BOOKED → PHONE_DONE — phone screen booking emailed, booked via calendar, completed.',
+    'AUTO_BOOK_SENT — live-interview invite sent, waiting for the candidate to book (reminder at 5 working days, honest close at 10). There is no phone screen.',
     'FULL_BOOKED → FULL_DONE — live (full) interview booked and completed.',
     'WORKING_SCHEDULED — a paid working interview has been scheduled.',
     'REFS_PENDING → REFS_COMPLETE — reference automation in flight / finished.',
@@ -269,7 +269,7 @@ function buildManualSections_() {
     '',
     '  — THE 3 CORE DECISIONS (the only choices on the happy path) —',
     '  • Advance to Live Interview → queue full interview booking email → Status FULL_BOOKED.   [decision 1]',
-    '  • Request References → ONE email to the candidate with BOTH the reference form and the culture-fit form',
+    '  • Request References → ONE email asking for references (culture fit is already part of the pre-screen score)',
     '      (48–72h deadline) → Status REFS_REQUESTED. The rest runs unattended: referees are emailed automatically,',
     '      referee + culture responses are AI graded and folded into the grand total, and a report card is emailed to',
     '      leadership. Pick this only after the live interview transcript has been ingested and graded.   [decision 2]',
@@ -278,7 +278,7 @@ function buildManualSections_() {
     '  • Put in the Drawer → hold email delayed by DRAWER_EMAIL_DELAY_DAYS → Status IN_DRAWER.   [decision 3 — not hire]',
     '',
     '  — ALTERNATE / MANUAL ADVANCE ACTIONS —',
-    '  • Send Phone Screen Booking → queue phone screen booking email (normally automated for qualified applicants).',
+    '  • Request Pre-Screen (Required) → emails the pre-screen link to someone who applied (e.g. Indeed) but never completed it. Applying does not put them in consideration; the pre-screen does.',
     '  • Send Working Interview → queue working interview invitation → Status WORKING_SCHEDULED.',
     '  • Extend Offer → alert manager (offer prep checklist) + candidate offer-pending email → Status OFFER_PENDING.',
     '      (Offer extended, pending acceptance — distinct from Confirm Hire above.)',
@@ -423,10 +423,10 @@ function tabsExplanation_() {
   desc[SHEETS.ASSESSMENT_REGISTRY]   = 'Per-role assessment config: section/rubric keys, score minimums, and booking eligibility.';
   desc[SHEETS.ALL_CANDIDATES]        = 'The master record — one row per candidate with scores, status, and contact info.';
   desc[SHEETS.INTERVIEW_PIPELINE]    = 'The manager-facing decision view. Read the recommendation, pick a "Manager Decision".';
-  desc[SHEETS.CULTURE_FIT]           = 'Linked responses from the Culture Fit form (Form Responses 1).';
+  desc[SHEETS.CULTURE_FIT]           = 'RETIRED 9/26/26 — old Culture & Style form responses (history only). Culture fit is now scored inside the combined pre-screen.';
   desc[SHEETS.REFERENCE_REQUESTS]    = 'Linked responses where a candidate lists their references (Form Responses 2).';
   desc[SHEETS.REFERENCE_CHECKS]      = 'Linked responses where a referee fills out the reference check (Form Responses 3).';
-  desc[SHEETS.SKILLS_TEST_RESPONSES] = 'Linked responses from the Technician skills test (Form Responses 4).';
+  desc[SHEETS.SKILLS_TEST_RESPONSES] = 'RETIRED 9/9/26 — old Technician Skill Test responses (history only). Technician scenarios are now inside the combined pre-screen.';
   desc[SHEETS.RAW_PRESCREEN]         = 'Original Pre-Screen response tab (Form Responses 5, quiet since 6/22/26). The live form now writes to Form Responses 6 — intake detects it automatically.';
   desc[SHEETS.RAW_OTTER_INTAKE]      = 'Raw interview transcripts delivered by Zapier from Otter; processed into archives + grades.';
   desc[SHEETS.TRANSCRIPT_ARCHIVE]    = 'Permanent archive of matched, graded interview transcripts.';
@@ -563,7 +563,7 @@ function seedManualSetupRegistry_() {
 
     ['Create the Google Forms (if they do not exist)',
      'Forms',
-     'Create the 5 forms (Pre-Screen, Culture Fit, Reference Submission, Reference Check, Skills Test) OR locate the approved ones. Each form must be linked to THIS spreadsheet (form → Responses → Link to Sheets).',
+     'Create the 3 forms (combined Pre-Screen — role questions + culture, Reference Submission, Reference Check) OR locate the approved ones. The old Culture Fit and Skills Test forms are retired. Each form must be linked to THIS spreadsheet (form → Responses → Link to Sheets).',
      'Google Forms', 'Pending', ''],
 
     ['Paste form Edit IDs into Form Registry',
@@ -573,7 +573,7 @@ function seedManualSetupRegistry_() {
 
     ['Confirm linked response tabs',
      'Forms',
-     'Confirm each form writes to its expected response tab: Pre-Screen → "Form Responses 5", Culture Fit → "Form Responses 1", Reference Submission → "Form Responses 2", Reference Check → "Form Responses 3", Skills Test → "Form Responses 4".',
+     'Confirm each form writes to its expected response tab: Pre-Screen → "Form Responses 6" (auto-detected), Reference Submission → "Form Responses 2", Reference Check → "Form Responses 3".',
      'Spreadsheet tabs', 'Pending', ''],
 
     ['Set the recruiting calendar',
@@ -583,7 +583,7 @@ function seedManualSetupRegistry_() {
 
     ['Fill Hiring Managers',
      'Config tables',
-     'Add at least one row with Active=TRUE: name, email, phone screen + full interview booking links, and calendar ID.',
+     'Add at least one row with Active=TRUE: name, email, full (live) interview booking link, and calendar ID.',
      'Hiring Managers tab', 'Pending', ''],
 
     ['Fill Role Rules',

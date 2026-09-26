@@ -52,6 +52,12 @@ function maybeSendCandidateReportCard_(candidateId, trigger) {
   var c = hits[0].data;
 
   var culture = _num_(c['Culture Score']);
+  // 9/26/26: culture fit comes from the combined pre-screen (AI Assessment Results)
+  // — there is no separate culture form any more.
+  if (!(culture > 0) && typeof SNAP_cultureFromAssessment_ === 'function') {
+    var cf = SNAP_cultureFromAssessment_(candidateId);
+    if (cf.score > 0) { culture = cf.score; c['Culture Score'] = cf.score; if (!c['Culture Summary']) c['Culture Summary'] = cf.summary; }
+  }
   var refs    = _num_(c['Reference Score'] || c['Reference Average']);
   if (!(culture > 0) || !(refs > 0)) {
     logEvent_('REPORT_CARD_DEFERRED', candidateId, { trigger: trigger || '', culture: culture, references: refs });
@@ -97,7 +103,6 @@ function _buildAndSendReportCard_(candidateId, c, trigger) {
 
   var scores = {
     'Pre-Screen':     _num_(c['Pre-Screen Score'] || c['AI Score']),
-    'Phone Screen':   _num_(c['Phone Score']),
     'Live Interview': _num_(c['Full Score']),
     'Culture Fit':    _num_(c['Culture Score']),
     'References':     _num_(c['Reference Score'] || c['Reference Average'])
